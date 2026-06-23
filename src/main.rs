@@ -1,4 +1,4 @@
-// EazyJsonView 应用入口（桌面 + Web 双目标）
+// Easy Json View 应用入口（桌面 + Web 双目标）
 //
 // UI 与其依赖只在启用某个 renderer 特性时才编译——这样无 renderer 的兜底构建
 // （如 `cargo test --no-default-features` 仍会编译 bin）不会产生大量「未使用」告警。
@@ -31,7 +31,7 @@ fn main() {
     dioxus::launch(app::App);
 }
 
-/// 原生（桌面）：打开标题为 EazyJsonView 的原生窗口。
+/// 原生（桌面）：打开标题为 Easy Json View 的原生窗口。
 /// 默认 1200×800、最小 800×600、可调整大小（见 docs/requirement.md）。
 #[cfg(all(not(target_arch = "wasm32"), feature = "desktop"))]
 fn main() {
@@ -43,7 +43,7 @@ fn main() {
     let icon = dioxus::desktop::icon_from_memory::<Icon>(include_bytes!("../assets/icon.png")).ok();
 
     let window = WindowBuilder::new()
-        .with_title("EazyJsonView")
+        .with_title("Easy Json View")
         .with_inner_size(LogicalSize::new(1200.0, 800.0))
         .with_min_inner_size(LogicalSize::new(800.0, 600.0))
         .with_window_icon(icon)

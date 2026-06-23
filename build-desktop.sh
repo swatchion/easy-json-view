@@ -1,5 +1,5 @@
 #!/bin/bash
-# EazyJsonView 桌面版构建/运行脚本（dx + 原生窗口，无 Python、无浏览器）。
+# Easy Json View 桌面版构建/运行脚本（dx + 原生窗口，无 Python、无浏览器）。
 # 用法：
 #   ./build-desktop.sh          # 生成样式 → 逻辑测试 → dx serve（弹出原生窗口，阻塞）
 #   ./build-desktop.sh build    # 仅构建可执行产物（非阻塞）
@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 
 MODE="${1:-serve}"
 
-echo "🖥  EazyJsonView 桌面版（mode=$MODE）"
+echo "🖥  Easy Json View 桌面版（mode=$MODE）"
 
 # 0. 系统依赖检查：Dioxus 0.7 桌面端（wry/tao）需
 #    webkit2gtk-4.1 + libsoup-3.0（webview），以及 libxdo（tao/global-hotkey 链接所需）。

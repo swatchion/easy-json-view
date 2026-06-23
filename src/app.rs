@@ -26,7 +26,7 @@ const TREE_NODE_CAP: usize = 3000;
 const SPLIT_MIN: f64 = 48.0;
 
 /// 首次使用时可一键填入的示例 JSON
-const SAMPLE_JSON: &str = r#"{"name":"EazyJsonView","version":"1.0.0","tags":["json","formatter","wasm"],"active":true,"stars":42,"meta":{"author":"swatchion","license":"MIT"},"nested":{"list":[1,2,3],"empty":null}}"#;
+const SAMPLE_JSON: &str = r#"{"name":"Easy Json View","version":"1.0.0","tags":["json","formatter","wasm"],"active":true,"stars":42,"meta":{"author":"swatchion","license":"MIT"},"nested":{"list":[1,2,3],"empty":null}}"#;
 
 /// 将文本写入系统剪贴板（fire-and-forget，忽略返回的 Promise）。Web：浏览器 Clipboard API。
 #[cfg(target_arch = "wasm32")]
@@ -988,8 +988,8 @@ pub fn App() -> Element {
                         {brand_logo()}
                         span {
                             class: "text-[15px] font-extrabold tracking-tight text-ink truncate min-w-0",
-                            "Eazy"
-                            span { class: "text-accent", "JsonView" }
+                            "Easy "
+                            span { class: "text-accent", "Json View" }
                         }
                         div { class: "flex-1" }
 

@@ -1,8 +1,8 @@
-# EazyJsonView 开发阶段总结
+# Easy Json View 开发阶段总结
 
 ## 📋 项目概览
 
-**项目名称**: EazyJsonView  
+**项目名称**: Easy Json View  
 **实际版本**: v1.0.0 Web版  
 **开发周期**: 1 天 (集中开发)  
 **最终技术栈**: Dioxus 0.6.3 + WebAssembly + localStorage + Tailwind CSS 4  
@@ -237,7 +237,7 @@ json_formatter/
 
 ## 🚀 项目成果
 
-EazyJsonView 成功实现了一个功能完整、性能优秀的JSON格式化工具：
+Easy Json View 成功实现了一个功能完整、性能优秀的JSON格式化工具：
 
 - ✅ **功能完整**: 所有核心功能均已实现
 - ✅ **性能优秀**: 所有性能指标均超额完成  

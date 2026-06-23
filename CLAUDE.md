@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目简介
 
-EazyJsonView 是一个 JSON 格式化/校验工具，用 **Rust + Dioxus 0.7.9** 编写，**同时面向桌面与 Web 双目标**：
+Easy Json View 是一个 JSON 格式化/校验工具，用 **Rust + Dioxus 0.7.9** 编写，**同时面向桌面与 Web 双目标**：
 
-- **桌面**（默认目标）：`dx serve --platform desktop` 启动**原生窗口**（wry/webkit2gtk），无浏览器、无 Python。历史与配置存用户配置目录下的单个 `~/.config/eazy-json-view/store.json`。
+- **桌面**（默认目标）：`dx serve --platform desktop` 启动**原生窗口**（wry/webkit2gtk），无浏览器、无 Python。历史与配置存用户配置目录下的单个 `~/.config/easy-json-view/store.json`。
 - **Web**：`dx build --platform web` 编译为 WebAssembly 在浏览器运行，历史与配置存 `localStorage`。
 
 核心 JSON 逻辑与全部功能（格式化/压缩、历史、搜索、树形、深色模式/字号/自动格式化）平台无关、两端共用；只有「存储」与少数「DOM/系统」辅助函数按平台分叉。
@@ -53,11 +53,11 @@ cargo bench --no-default-features
   - `web.rs` 转发 `gloo_storage::LocalStorage`；`desktop.rs` 落盘到单个 `store.json`（`HashMap<String, Value>` + `Mutex` 进程内缓存，写前 `create_dir_all` + `to_string_pretty`）。
 - `src/services/mod_enhanced.rs` — 全部业务逻辑与数据类型，**平台无关**。仅 `use crate::platform::Storage`：
   - `JsonService`（validate / format / minify / get_stats，基于 `serde_json`）
-  - `HistoryService`（key=`eazy_json_view_history`，上限 100 条）、`ConfigService`（key=`eazy_json_view_config`）
+  - `HistoryService`（key=`easy_json_view_history`，上限 100 条）、`ConfigService`（key=`easy_json_view_config`）
   - 类型：`HistoryRecord`（id=时间戳，默认 name=内容的 SHA1 前 7 位短 hash）、`FormatOptions`、`ValidationResult`、`JsonStats`、`AppConfig`、`UiSettings`
   - 树形：`build_tree_rows` / `collect_container_paths` / `TreeRow`
 
-`src/main.rs` 按 `cfg` 分支启动：wasm → `console_error_panic_hook` + `dioxus::launch`；原生 → `LaunchBuilder::desktop()` + `WindowBuilder`（标题 EazyJsonView，1200×800，最小 800×600，可调）。`src/lib.rs` 同样 `mod platform;` 并 `#[path]` 把 `mod_enhanced.rs` 暴露为 `eazy_json_view::services`，供 `benches/` 与 `src/tests.rs` 使用；单元测试挂在 lib 侧，使 `cargo test --lib --no-default-features` 不拉任何 renderer。
+`src/main.rs` 按 `cfg` 分支启动：wasm → `console_error_panic_hook` + `dioxus::launch`；原生 → `LaunchBuilder::desktop()` + `WindowBuilder`（标题 Easy Json View，1200×800，最小 800×600，可调）。`src/lib.rs` 同样 `mod platform;` 并 `#[path]` 把 `mod_enhanced.rs` 暴露为 `easy_json_view::services`，供 `benches/` 与 `src/tests.rs` 使用；单元测试挂在 lib 侧，使 `cargo test --lib --no-default-features` 不拉任何 renderer。
 
 ### 源码布局
 

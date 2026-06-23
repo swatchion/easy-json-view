@@ -1,4 +1,4 @@
-# EazyJsonView 构建说明（Windows / macOS / Linux 桌面 + Web）
+# Easy Json View 构建说明（Windows / macOS / Linux 桌面 + Web）
 
 本文档说明如何分别构建 **Windows、macOS、Linux 三种桌面安装包** 与 **Web（WASM）静态站点**。
 
@@ -82,7 +82,7 @@ dx build --platform web --release
 **产物目录**（静态文件，可托管到任意静态服务器 / CDN / 对象存储）：
 
 ```
-target/dx/eazy-json-view/release/web/public/
+target/dx/easy-json-view/release/web/public/
 ```
 
 本地预览：
@@ -119,7 +119,7 @@ sudo apt install libwebkit2gtk-4.1-dev libsoup-3.0-dev libxdo-dev
 ```bash
 # 生成样式（§1.3）后：
 dx build --platform desktop --release
-# 产物（裸可执行 + 资源）：target/dx/eazy-json-view/release/linux/app/
+# 产物（裸可执行 + 资源）：target/dx/easy-json-view/release/linux/app/
 ```
 
 或脚本：`./build-desktop.sh build`（含依赖检查 + 样式生成 + 逻辑测试 + 构建）。
@@ -252,8 +252,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: eazy-json-view-${{ matrix.platform }}
-          path: target/dx/eazy-json-view/bundle/   # 按实际产物目录调整
+          name: easy-json-view-${{ matrix.platform }}
+          path: target/dx/easy-json-view/bundle/   # 按实际产物目录调整
 
   web:
     runs-on: ubuntu-latest
@@ -268,8 +268,8 @@ jobs:
       - run: dx build --platform web --release
       - uses: actions/upload-artifact@v4
         with:
-          name: eazy-json-view-web
-          path: target/dx/eazy-json-view/release/web/public/
+          name: easy-json-view-web
+          path: target/dx/easy-json-view/release/web/public/
 ```
 
 > macOS/Windows 的 Tailwind 步骤换用对应 CLI；`upload-artifact` 的 `path` 以本机实际产物路径为准（`dx bundle` 结束时会打印最终文件位置）。
@@ -323,7 +323,7 @@ rfd = { version = "0.17" }
 
 | 目标 | 构建命令 | 产物 |
 |------|----------|------|
-| Web | `dx build --platform web --release` | `target/dx/eazy-json-view/release/web/public/`（静态站点）|
+| Web | `dx build --platform web --release` | `target/dx/easy-json-view/release/web/public/`（静态站点）|
 | Linux | `dx bundle --platform linux --release --package-types deb\|rpm\|appimage` | `.deb` / `.rpm` / `.AppImage` |
 | macOS | `dx bundle --platform macos --release --package-types dmg` | `.app` / `.dmg` |
 | Windows | `dx bundle --platform windows --release --package-types msi\|nsis` | `.msi` / `.exe` |

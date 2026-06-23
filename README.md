@@ -1,6 +1,6 @@
 **English** · [简体中文](./README.zh-CN.md)
 
-# EazyJsonView
+# Easy Json View
 
 A modern JSON formatter / validator built with **Rust + Dioxus 0.7.9**, targeting **both desktop and Web from a single codebase**:
 
@@ -32,7 +32,7 @@ The core JSON logic and all features are shared across both targets; only "stora
 - **UI framework**: Dioxus 0.7.9 (`desktop` / `web` dual renderer, one per target)
 - **Language**: Rust (edition 2021)
 - **Compile targets**: native (desktop) / WebAssembly (`wasm32-unknown-unknown`, Web)
-- **Data storage**: a single `~/.config/eazy-json-view/store.json` on desktop / browser `localStorage` on Web (routed per platform by the `src/platform/` shim)
+- **Data storage**: a single `~/.config/easy-json-view/store.json` on desktop / browser `localStorage` on Web (routed per platform by the `src/platform/` shim)
 - **Styling**: Tailwind CSS (**offline**; the standalone CLI generates `assets/tailwind.css`, loaded via `asset!` + `document::Stylesheet` — no CDN)
 - **Build tool**: `dx` (dioxus-cli)
 - **JSON processing**: `serde_json` (with `preserve_order` enabled to keep key order)
@@ -70,7 +70,7 @@ rustup target add wasm32-unknown-unknown
 ./build-web.sh serve          # local preview (dx serve --platform web)
 ```
 
-The static Web artifacts are placed in `target/dx/eazy-json-view/release/web/public/` and can be hosted by any static server.
+The static Web artifacts are placed in `target/dx/easy-json-view/release/web/public/` and can be hosted by any static server.
 
 > Note: at the end of a release build, the `wasm-opt` optimization step may crash due to debug info (DWARF) and print `ERROR ... wasm-opt failed`; dx then falls back to the unoptimized wasm — the build still succeeds and runs fine, only the size is larger (a known dx 0.7 behavior, not a build failure).
 
@@ -109,18 +109,18 @@ The static Web artifacts are placed in `target/dx/eazy-json-view/release/web/pub
 - `platform/`: the isomorphic `Storage::{get,set,delete}` shim — Web → localStorage, desktop → `store.json`.
 - `services/mod_enhanced.rs` (platform-agnostic):
   - `JsonService` — `validate` / `format` / `minify` / `get_stats` (based on `serde_json`)
-  - `HistoryService` — history CRUD (key=`eazy_json_view_history`, deduplicated, capped at 100)
-  - `ConfigService` — config read/write (key=`eazy_json_view_config`)
+  - `HistoryService` — history CRUD (key=`easy_json_view_history`, deduplicated, capped at 100)
+  - `ConfigService` — config read/write (key=`easy_json_view_config`)
   - Types: `HistoryRecord`, `FormatOptions`, `ValidationResult`, `JsonStats`, `AppConfig`, `UiSettings`, `TreeRow`
 
 ## 💾 Data Storage
 
 History and config are persisted per platform via the `src/platform/` shim — no server, nothing uploaded remotely:
 
-- **Desktop**: a single JSON file `~/.config/eazy-json-view/store.json` containing the two keys `eazy_json_view_history` and `eazy_json_view_config`.
+- **Desktop**: a single JSON file `~/.config/easy-json-view/store.json` containing the two keys `easy_json_view_history` and `easy_json_view_config`.
 - **Web**: browser `localStorage`, with the same two keys.
-- `eazy_json_view_history` — the history list (deduplicated by content, capped at 100; the default name is the first 7 chars of the content's SHA1 short hash, with a creation timestamp; bookmarks are never evicted).
-- `eazy_json_view_config` — formatting options (indentation + sort keys) and UI settings (theme / font size / auto-format).
+- `easy_json_view_history` — the history list (deduplicated by content, capped at 100; the default name is the first 7 chars of the content's SHA1 short hash, with a creation timestamp; bookmarks are never evicted).
+- `easy_json_view_config` — formatting options (indentation + sort keys) and UI settings (theme / font size / auto-format).
 
 ## 🧪 Testing & Benchmarks
 

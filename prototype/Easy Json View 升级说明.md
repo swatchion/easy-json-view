@@ -1,4 +1,4 @@
-# EazyJsonView 视觉与功能升级说明
+# Easy Json View 视觉与功能升级说明
 
 > 本文档记录在 **原始生产版本**（左侧标题栏 + 历史记录、右侧工具栏 + 输出/输入双栏）基础上完成的品牌 Logo 设计与一系列功能 / 视觉优化，便于评审与开发交接。
 
@@ -95,7 +95,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='0' y1='0' x2='48' y2='48' gradientUnits='userSpaceOnUse'><stop stop-color='%233b78ff'/><stop offset='1' stop-color='%231f53e0'/></linearGradient></defs><rect width='48' height='48' rx='13' fill='url(%23g)'/><path d='M20 14C17 14 17 18 17 21C17 23.5 15 24 13.5 24C15 24 17 24.5 17 27C17 30 17 34 20 34' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><path d='M28 14C31 14 31 18 31 21C31 23.5 33 24 34.5 24C33 24 31 24.5 31 27C31 30 31 34 28 34' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><circle cx='24' cy='24' r='3.4' fill='%2322d3ee'/></svg>">
 ```
 
-> 字标锁定：图标 + `Eazy`（深色 `--text`）`JsonView`（强调色 `--accent`），字重 800、字距 `-0.022em`，副标题「JSON 格式化 · 树形查看工具」。
+> 字标锁定：图标 + `Easy`（深色 `--text`）`Json View`（强调色 `--accent`），字重 800、字距 `-0.022em`，副标题「JSON 格式化 · 树形查看工具」。
 
 ---
 
@@ -197,4 +197,4 @@
 
 ---
 
-*文档随 `EazyJsonView.dc.html` 当前实现整理；Logo 概念稿见 `EazyJsonView Logo.dc.html`。*
+*文档随 `Easy Json View.dc.html` 当前实现整理；Logo 概念稿见 `Easy Json View Logo.dc.html`。*

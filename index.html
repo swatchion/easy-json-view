@@ -16,7 +16,7 @@
         // <html> 打上 dark 类，使首屏直接是深色。gloo_storage 以 JSON 字符串存储 AppConfig，
         // 故按 ui_settings.theme 判断。整段 try/catch 包裹：缺失/损坏的配置绝不阻塞 <head>。
         try {
-            var raw = localStorage.getItem('eazy_json_view_config');
+            var raw = localStorage.getItem('easy_json_view_config');
             if (raw) {
                 var cfg = JSON.parse(raw);
                 if (cfg && cfg.ui_settings && cfg.ui_settings.theme === 'dark') {

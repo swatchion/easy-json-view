@@ -1,8 +1,8 @@
-# EazyJsonView 项目状态报告
+# Easy Json View 项目状态报告
 
 ## 📊 项目概览
 
-**项目名称**: EazyJsonView - JSON 格式化工具  
+**项目名称**: Easy Json View - JSON 格式化工具  
 **版本**: v1.0.0  
 **状态**: ✅ **已完成并可投入使用**  
 **完成时间**: 2025年9月28日  
@@ -194,4 +194,4 @@ cd dist && python3 serve.py
 
 ---
 
-**EazyJsonView v1.0.0 - 让JSON处理变得简单高效！** 🎉
+**Easy Json View v1.0.0 - 让JSON处理变得简单高效！** 🎉

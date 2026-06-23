@@ -7,7 +7,7 @@
 # asset_dir / out_dir 采用默认值（assets/、目标平台各自的输出目录）。
 
 [web.app]
-title = "EazyJsonView - JSON 格式化工具"
+title = "Easy Json View - JSON 格式化工具"
 
 # 打包图标（供 `dx bundle` 用，非运行时窗口图标——运行时图标见 main.rs 的 with_window_icon）
 [bundle]

@@ -1,6 +1,6 @@
 _version: 1
 
-# EazyJsonView 简体中文译文。键与 en.yml 一一对应，动态占位 %{var} 必须同名同位。
+# Easy Json View 简体中文译文。键与 en.yml 一一对应，动态占位 %{var} 必须同名同位。
 # 文案沿用 i18n 化之前界面上的原中文，保证现有用户观感不变。
 
 app:
@@ -145,7 +145,7 @@ toast:
 # 功能介绍（About）弹窗 —— 5 个差异化卖点。文案为初稿，待按产品口吻定稿。
 about:
   button: 关于
-  title: 为什么选择 EazyJsonView？
+  title: 为什么选择 Easy Json View？
   subtitle: 一款尊重你数据的 JSON 格式化工具。
   privacy_title: 不收集数据
   privacy_desc: 没有埋点、无需账号、不收集任何个人信息——数据绝不离开你的设备。

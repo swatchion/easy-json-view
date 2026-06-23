@@ -1,9 +1,9 @@
-# EazyJsonView 需求规范文档
+# Easy Json View 需求规范文档
 
 ## 1. 项目概述
 
 ### 1.1 应用信息
-- **应用名称**: EazyJsonView
+- **应用名称**: Easy Json View
 - **版本**: v1.0.0
 - **框架**: Dioxus 0.6.3
 - **目标平台**: 桌面版 GUI（当前专注于 Linux Ubuntu 22.04）
@@ -93,7 +93,7 @@
 ## 4. 数据存储
 
 ### 4.1 存储位置
-- **数据目录**: `~/.config/EazyJsonView`
+- **数据目录**: `~/.config/Easy Json View`
 - **配置文件**: `config.toml`
 - **数据库文件**: `history.db`
 

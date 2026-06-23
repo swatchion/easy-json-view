@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use eazy_json_view::services::{JsonService, ValidationResult, FormatOptions};
+use easy_json_view::services::{JsonService, ValidationResult, FormatOptions};
 
 fn generate_large_json(size: usize) -> String {
     let mut json = String::from("{");

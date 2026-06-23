@@ -6,10 +6,10 @@
 //! 无需 webkit/libxdo、无需 GUI。
 //!
 //! 用临时 `XDG_CONFIG_HOME` 隔离配置目录（`dirs::config_dir()` 在 Linux 上遵循它），
-//! 避免污染真实 `~/.config/eazy-json-view/store.json`。
+//! 避免污染真实 `~/.config/easy-json-view/store.json`。
 #![cfg(not(target_arch = "wasm32"))]
 
-use eazy_json_view::services::{AppConfig, ConfigService, HistoryRecord, HistoryService};
+use easy_json_view::services::{AppConfig, ConfigService, HistoryRecord, HistoryService};
 
 #[test]
 fn desktop_store_json_roundtrip() {
@@ -29,11 +29,11 @@ fn desktop_store_json_roundtrip() {
         ConfigService::save_config(&AppConfig::default()).await.unwrap();
 
         // store.json 存在，且为「单文件 + 两个键」
-        let store = tmp.join("eazy-json-view").join("store.json");
+        let store = tmp.join("easy-json-view").join("store.json");
         assert!(store.exists(), "store.json 应已落盘");
         let text = std::fs::read_to_string(&store).unwrap();
-        assert!(text.contains("eazy_json_view_history"), "应含 history 键");
-        assert!(text.contains("eazy_json_view_config"), "应含 config 键");
+        assert!(text.contains("easy_json_view_history"), "应含 history 键");
+        assert!(text.contains("easy_json_view_config"), "应含 config 键");
 
         // 回读一致
         let back = HistoryService::load_history().await.unwrap();

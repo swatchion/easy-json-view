@@ -1,8 +1,8 @@
 _version: 1
 
-# EazyJsonView 英文译文（默认 / 回退语言）。
+# Easy Json View 英文译文（默认 / 回退语言）。
 # 键按 UI 区域分组。动态值用 %{var} 占位，必须与 zh-CN.yml 同名同位。
-# 品牌名 EazyJsonView、纯符号（★☆🗑️▶▼ 等）、语言名（中/EN）不在此——它们留在代码里不翻译。
+# 品牌名 Easy Json View、纯符号（★☆🗑️▶▼ 等）、语言名（中/EN）不在此——它们留在代码里不翻译。
 
 app:
   subtitle: JSON formatter & validator
@@ -159,7 +159,7 @@ toast:
 # 功能介绍（About）弹窗 —— 5 个差异化卖点。文案为初稿，待按产品口吻定稿。
 about:
   button: About
-  title: Why EazyJsonView?
+  title: Why Easy Json View?
   subtitle: A JSON formatter that respects your data.
   privacy_title: No tracking
   privacy_desc: Zero analytics, no account, no personal data collected — nothing ever leaves your machine.

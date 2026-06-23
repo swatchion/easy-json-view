@@ -1,5 +1,5 @@
 #!/bin/bash
-# EazyJsonView Web 版构建脚本（dx + WASM，输出可静态托管的产物）。
+# Easy Json View Web 版构建脚本（dx + WASM，输出可静态托管的产物）。
 # 用法：
 #   ./build-web.sh          # 生成样式 → dx build --platform web → 逻辑测试
 #   ./build-web.sh serve    # 本地预览：dx serve --platform web（阻塞）
@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 
 MODE="${1:-build}"
 
-echo "🌐 EazyJsonView Web 版（mode=$MODE）"
+echo "🌐 Easy Json View Web 版（mode=$MODE）"
 
 # 1. 生成离线 Tailwind CSS（不再使用 CDN）
 TW=./tailwindcss
@@ -38,5 +38,5 @@ echo "🧪 运行逻辑测试..."
 cargo test --lib --no-default-features
 
 echo "✅ 构建完成。静态产物位于 dx 的 web 输出目录："
-echo "     target/dx/eazy-json-view/release/web/public/"
+echo "     target/dx/easy-json-view/release/web/public/"
 echo "   可用任意静态服务器托管，或 './build-web.sh serve' 直接本地预览。"

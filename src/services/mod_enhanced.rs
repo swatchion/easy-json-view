@@ -249,7 +249,7 @@ impl JsonStats {
 pub struct HistoryService;
 
 impl HistoryService {
-    const STORAGE_KEY: &'static str = "eazy_json_view_history";
+    const STORAGE_KEY: &'static str = "easy_json_view_history";
     pub const MAX_RECORDS: usize = 100; // 最大保存记录数
 
     /// 加载历史记录
@@ -352,7 +352,7 @@ impl HistoryService {
 pub struct ConfigService;
 
 impl ConfigService {
-    const CONFIG_KEY: &'static str = "eazy_json_view_config";
+    const CONFIG_KEY: &'static str = "easy_json_view_config";
 
     /// 加载配置
     pub async fn load_config() -> Result<AppConfig> {

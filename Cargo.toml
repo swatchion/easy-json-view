@@ -1,11 +1,11 @@
 [package]
-name = "eazy-json-view"
+name = "easy-json-view"
 version = "1.0.0"
 edition = "2021"
 authors = ["Your Name <your.email@example.com>"]
 description = "一个使用 Dioxus 框架开发的 JSON 格式化工具（桌面 + Web 双目标）"
 license-file = "LICENSE"
-repository = "https://github.com/your-username/eazy-json-view"
+repository = "https://github.com/your-username/easy-json-view"
 keywords = ["json", "formatter", "gui", "dioxus", "desktop"]
 categories = ["command-line-utilities", "development-tools"]
 
@@ -69,11 +69,11 @@ name = "json_performance"
 harness = false
 
 [lib]
-name = "eazy_json_view"
+name = "easy_json_view"
 path = "src/lib.rs"
 
 [[bin]]
-name = "eazy-json-view"
+name = "easy-json-view"
 path = "src/main.rs"
 
 [profile.release]
