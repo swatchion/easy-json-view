@@ -1,142 +1,152 @@
+**English** · [简体中文](./README.zh-CN.md)
+
 # EazyJsonView
 
-一个现代化的 JSON 格式化 / 校验工具，使用 **Rust + Dioxus 0.7.9** 编写，**同时面向桌面与 Web 双目标**：
+A modern JSON formatter / validator built with **Rust + Dioxus 0.7.9**, targeting **both desktop and Web from a single codebase**:
 
-- **桌面**（默认）：原生窗口应用（wry/webkit2gtk），无浏览器、无服务器；历史与配置存用户配置目录下的单个 `store.json`。
-- **Web**：编译为 **WebAssembly** 在浏览器运行；历史与配置存浏览器 `localStorage`。
+- **Desktop** (default): a native window app (wry/webkit2gtk) — no browser, no server; history and config are stored in a single `store.json` under the user's config directory.
+- **Web**: compiled to **WebAssembly** and run in the browser; history and config are stored in the browser's `localStorage`.
 
-核心 JSON 逻辑与全部功能两端共用，仅「存储」与少数「DOM/系统」辅助函数按平台分叉。
+The core JSON logic and all features are shared across both targets; only "storage" and a few "DOM/system" helpers fork by platform.
 
-## ✨ 特性
+## ✨ Features
 
-- 🚀 **高性能**：基于 Rust + WebAssembly，处理速度快；输出采用单文本块 + 行号渲染，大文档下依然流畅
-- 🎨 **格式化（美化）**：可选 2 / 4 / 8 空格缩进
-- 🌈 **语法高亮**：对中小规模输出着色（键 / 字符串 / 数字 / 布尔 / null），超大文档自动回退为纯文本以保持性能
-- 🗜️ **压缩（Minify）**：去除空白，压缩为单行
-- 🔤 **键序控制**：默认保留对象原始键序，可选「排序键」按字母序排序
-- 🔎 **结果区键值搜索**：在格式化结果中查找键/值，高亮全部匹配并显示计数，支持上一个 / 下一个跳转（Enter / Shift+Enter）与区分大小写；超大文档下匹配数封顶以保持性能
-- 📊 **JSON 统计**：统计对象 / 数组 / 键 / 字符串 / 数字 / 布尔 / Null 及值总数
-- 💾 **历史记录**（localStorage）：自动保存、搜索、重命名、删除、清空；按内容去重，最多保留 100 条
-- ⭐ **书签收藏**：标记重要记录后置顶显示且永不被淘汰，支持「只看书签」过滤；重新格式化相同内容仍保留书签
-- 📋 **复制 / 下载 / 导入**：一键复制输出或输入、下载输出为 `.json`、从本地文件导入 JSON
-- ⚠️ **错误提示**：内联错误横幅，给出 serde 的行 / 列定位信息
-- ⌨️ **快捷键**：`Ctrl+Enter`（或 `Cmd+Enter`）快速格式化
-- 🧩 **示例 / 清空**：一键填入内置示例、清空输入与输出
-- ⚙️ **设置持久化**：缩进大小与排序键选项跨刷新保存
-- 📱 **响应式 & 无障碍**：移动端自动堆叠，提供 `aria-label` 与焦点环
+- 🚀 **High performance**: built on Rust + WebAssembly for fast processing; output is rendered as a single text block with line numbers, staying smooth even for large documents
+- 🎨 **Formatting (beautify)**: choose 2 / 4 / 8 space indentation
+- 🌈 **Syntax highlighting**: colorizes small-to-medium output (keys / strings / numbers / booleans / null); very large documents automatically fall back to plain text to preserve performance
+- 🗜️ **Minify**: strips whitespace and compresses to a single line
+- 🔤 **Key order control**: preserves the original object key order by default; optionally "sort keys" alphabetically
+- 🔎 **Key/value search in results**: find keys/values within the formatted output, highlight all matches with a count, jump to previous / next (Enter / Shift+Enter), and toggle case sensitivity; match counts are capped for very large documents to preserve performance
+- 📊 **JSON statistics**: counts objects / arrays / keys / strings / numbers / booleans / null and the total number of values
+- 💾 **History** (localStorage): auto-save, search, rename, delete, clear; deduplicated by content, capped at 100 entries
+- ⭐ **Bookmarks**: pin important records to the top so they are never evicted, with a "bookmarks only" filter; re-formatting the same content keeps its bookmark
+- 📋 **Copy / Download / Import**: one-click copy of the output or input, download output as `.json`, import JSON from a local file
+- ⚠️ **Error reporting**: an inline error banner with serde's line / column location
+- ⌨️ **Shortcuts**: `Ctrl+Enter` (or `Cmd+Enter`) to format quickly
+- 🧩 **Sample / Clear**: load a built-in sample or clear the input and output with one click
+- ⚙️ **Persistent settings**: indentation size and sort-keys option are saved across reloads
+- 📱 **Responsive & accessible**: stacks automatically on mobile, with `aria-label`s and focus rings
 
-## 🛠️ 技术栈
+## 🛠️ Tech Stack
 
-- **UI 框架**：Dioxus 0.7.9（`desktop` / `web` 双 renderer，按目标二选一）
-- **编程语言**：Rust（edition 2021）
-- **编译目标**：原生（桌面）/ WebAssembly（`wasm32-unknown-unknown`，Web）
-- **数据存储**：桌面 `~/.config/eazy-json-view/store.json` 单文件 / Web 浏览器 `localStorage`（由 `src/platform/` 垫片按平台路由）
-- **样式**：Tailwind CSS（**离线**，standalone CLI 生成 `assets/tailwind.css`，经 `asset!` + `document::Stylesheet` 引入；不再用 CDN）
-- **构建工具**：`dx`（dioxus-cli）
-- **JSON 处理**：`serde_json`（启用 `preserve_order` 以保留键序）
+- **UI framework**: Dioxus 0.7.9 (`desktop` / `web` dual renderer, one per target)
+- **Language**: Rust (edition 2021)
+- **Compile targets**: native (desktop) / WebAssembly (`wasm32-unknown-unknown`, Web)
+- **Data storage**: a single `~/.config/eazy-json-view/store.json` on desktop / browser `localStorage` on Web (routed per platform by the `src/platform/` shim)
+- **Styling**: Tailwind CSS (**offline**; the standalone CLI generates `assets/tailwind.css`, loaded via `asset!` + `document::Stylesheet` — no CDN)
+- **Build tool**: `dx` (dioxus-cli)
+- **JSON processing**: `serde_json` (with `preserve_order` enabled to keep key order)
 
-## 🚀 快速开始
+## 🚀 Getting Started
 
-### 构建前置
+### Prerequisites
 
 ```bash
-# dx CLI（一次性）；版本须与 Cargo.toml 的 dioxus 一致
+# dx CLI (one-time); the version must match dioxus in Cargo.toml
 cargo install dioxus-cli --version 0.7.9 --locked
 
-# 桌面端系统依赖（wry/webkit2gtk）
+# Desktop system dependencies (wry/webkit2gtk)
 sudo dnf install webkit2gtk4.1-devel libsoup3-devel     # Fedora
 # sudo apt install libwebkit2gtk-4.1-dev libsoup-3.0-dev # Debian/Ubuntu
 
-# Web 端目标
+# Web target
 rustup target add wasm32-unknown-unknown
 ```
 
-> Tailwind standalone CLI 由构建脚本自动下载（`./tailwindcss`，已加入 `.gitignore`）。
+> The Tailwind standalone CLI is downloaded automatically by the build scripts (`./tailwindcss`, already in `.gitignore`).
 
-### 桌面版（原生窗口）
-
-```bash
-./build-desktop.sh            # 生成样式 → 逻辑测试 → dx serve（弹出原生窗口）
-./build-desktop.sh build      # 仅构建可执行产物
-# 等价手动：dx serve --platform desktop
-```
-
-### Web 版
+### Desktop (native window)
 
 ```bash
-./build-web.sh                # 生成样式 → dx build --platform web → 逻辑测试
-./build-web.sh serve          # 本地预览（dx serve --platform web）
+./build-desktop.sh            # generate styles → logic tests → dx serve (opens a native window)
+./build-desktop.sh build      # build the executable only
+# equivalent manual command: dx serve --platform desktop
 ```
 
-Web 静态产物位于 `target/dx/eazy-json-view/release/web/public/`，可用任意静态服务器托管。
+### Web
 
-> 说明：release 构建末尾 `wasm-opt` 优化步骤可能因调试信息（DWARF）崩溃并打印 `ERROR ... wasm-opt failed`，dx 会自动回退到未优化的 wasm——构建仍成功、可正常运行，仅体积偏大（dx 0.7 已知现象，非构建失败）。
+```bash
+./build-web.sh                # generate styles → dx build --platform web → logic tests
+./build-web.sh serve          # local preview (dx serve --platform web)
+```
 
-> 注意：`cargo build`/`test`/`bench` 默认走 desktop 特性（需 webkit）；纯逻辑工作可加 `--no-default-features`。
+The static Web artifacts are placed in `target/dx/eazy-json-view/release/web/public/` and can be hosted by any static server.
 
-## 📁 项目结构
+> Note: at the end of a release build, the `wasm-opt` optimization step may crash due to debug info (DWARF) and print `ERROR ... wasm-opt failed`; dx then falls back to the unoptimized wasm — the build still succeeds and runs fine, only the size is larger (a known dx 0.7 behavior, not a build failure).
+
+> Note: `cargo build`/`test`/`bench` default to the desktop feature (which needs webkit); for pure-logic work add `--no-default-features`.
+
+## 📁 Project Structure
 
 ```
-├── index.html                      # Web 页面骨架（仅防闪烁脚本 + 挂载点；CDN 与加载屏已移除）
-├── Dioxus.toml                     # dx 配置（[web.app] title 等）
-├── tailwind.config.js              # Tailwind content 扫描 src/**/*.rs + index.html
-├── build-desktop.sh / build-web.sh # 桌面 / Web 构建脚本（替代旧 build.sh + serve.py）
-├── Cargo.toml                      # 双目标依赖与 [features]（default=desktop / web / desktop）
+├── LICENSE                         # PolyForm Noncommercial 1.0.0 (exemption preamble + verbatim text)
+├── README.md                       # main docs (English, default)
+├── README.zh-CN.md                 # main docs (Simplified Chinese)
+├── index.html                      # Web page skeleton (anti-flicker script + mount point only; CDN and loading screen removed)
+├── Dioxus.toml                     # dx config ([web.app] title, etc.)
+├── tailwind.config.js              # Tailwind content scans src/**/*.rs + index.html
+├── build-desktop.sh / build-web.sh # desktop / Web build scripts (replacing the old build.sh + serve.py)
+├── Cargo.toml                      # dual-target dependencies and [features] (default=desktop / web / desktop)
 ├── assets/
-│   ├── input.css                   # Tailwind 输入（@tailwind + 全局/深色覆盖）
-│   └── tailwind.css                # 生成的离线样式（asset! 引入）
+│   ├── input.css                   # Tailwind input (@tailwind + global/dark overrides)
+│   └── tailwind.css                # generated offline styles (loaded via asset!)
 ├── src/
-│   ├── main.rs                     # 入口（cfg 分支：wasm launch / 桌面 LaunchBuilder+窗口）
-│   ├── lib.rs                      # 库入口，向 benches/tests 暴露 services；挂 platform
-│   ├── app.rs                      # 全部 UI（cfg 分叉的平台辅助函数）
-│   ├── platform/                   # 缝1：Storage 平台垫片
-│   │   ├── mod.rs                  #   按 cfg 路由
-│   │   ├── web.rs                  #   localStorage（gloo）
-│   │   └── desktop.rs              #   store.json 单文件
+│   ├── main.rs                     # entry point (cfg branch: wasm launch / desktop LaunchBuilder + window)
+│   ├── lib.rs                      # library entry; exposes services to benches/tests; mounts platform
+│   ├── app.rs                      # all UI (cfg-forked platform helpers)
+│   ├── platform/                   # seam 1: Storage platform shim
+│   │   ├── mod.rs                  #   routes by cfg
+│   │   ├── web.rs                  #   localStorage (gloo)
+│   │   └── desktop.rs              #   single store.json file
 │   ├── services/
-│   │   └── mod_enhanced.rs         # 全部业务逻辑与类型（平台无关）
-│   └── tests.rs                    # 单元测试
+│   │   └── mod_enhanced.rs         # all business logic and types (platform-agnostic)
+│   └── tests.rs                    # unit tests
 └── benches/
-    └── json_performance.rs         # Criterion 基准测试
+    └── json_performance.rs         # Criterion benchmarks
 ```
 
-- `app.rs`：整个界面与事件处理，RSX 中直接书写 Tailwind class；平台相关辅助（剪贴板/下载/计时/文件导入）按 `cfg` 分叉但保持签名。
-- `platform/`：`Storage::{get,set,delete}` 同构垫片，Web→localStorage，桌面→`store.json`。
-- `services/mod_enhanced.rs`（平台无关）：
-  - `JsonService` — `validate` / `format` / `minify` / `get_stats`（基于 `serde_json`）
-  - `HistoryService` — 历史 CRUD（key=`eazy_json_view_history`，去重、上限 100）
-  - `ConfigService` — 配置读写（key=`eazy_json_view_config`）
-  - 类型：`HistoryRecord`、`FormatOptions`、`ValidationResult`、`JsonStats`、`AppConfig`、`UiSettings`、`TreeRow`
+- `app.rs`: the entire UI and event handling, with Tailwind classes written directly in RSX; platform-specific helpers (clipboard/download/timing/file import) fork by `cfg` while keeping their signatures.
+- `platform/`: the isomorphic `Storage::{get,set,delete}` shim — Web → localStorage, desktop → `store.json`.
+- `services/mod_enhanced.rs` (platform-agnostic):
+  - `JsonService` — `validate` / `format` / `minify` / `get_stats` (based on `serde_json`)
+  - `HistoryService` — history CRUD (key=`eazy_json_view_history`, deduplicated, capped at 100)
+  - `ConfigService` — config read/write (key=`eazy_json_view_config`)
+  - Types: `HistoryRecord`, `FormatOptions`, `ValidationResult`, `JsonStats`, `AppConfig`, `UiSettings`, `TreeRow`
 
-## 💾 数据存储
+## 💾 Data Storage
 
-历史与配置经 `src/platform/` 垫片按平台持久化，无服务器、不上传远程：
+History and config are persisted per platform via the `src/platform/` shim — no server, nothing uploaded remotely:
 
-- **桌面**：单个 JSON 文件 `~/.config/eazy-json-view/store.json`，内含 `eazy_json_view_history` 与 `eazy_json_view_config` 两个键。
-- **Web**：浏览器 `localStorage`，同样两个键。
-- `eazy_json_view_history` — 历史列表（按内容去重，最多 100 条；默认名称为内容 SHA1 的前 7 位短 hash，记录创建时间，书签永不淘汰）。
-- `eazy_json_view_config` — 格式化选项（缩进 + 排序键）与 UI 设置（主题 / 字号 / 自动格式化）。
+- **Desktop**: a single JSON file `~/.config/eazy-json-view/store.json` containing the two keys `eazy_json_view_history` and `eazy_json_view_config`.
+- **Web**: browser `localStorage`, with the same two keys.
+- `eazy_json_view_history` — the history list (deduplicated by content, capped at 100; the default name is the first 7 chars of the content's SHA1 short hash, with a creation timestamp; bookmarks are never evicted).
+- `eazy_json_view_config` — formatting options (indentation + sort keys) and UI settings (theme / font size / auto-format).
 
-## 🧪 测试与基准
+## 🧪 Testing & Benchmarks
 
 ```bash
-# 纯逻辑单元测试（无需 webkit，推荐）
+# Pure-logic unit tests (no webkit needed, recommended)
 cargo test --lib --no-default-features
 
-# 单个测试（按名匹配）
+# A single test (matched by name)
 cargo test test_json_formatting --no-default-features
 
-# 基准测试（Criterion）
+# Benchmarks (Criterion)
 cargo bench --no-default-features
 ```
 
-## 🗺️ 路线图 / Roadmap
+## 🗺️ Roadmap
 
-- 桌面打包为可安装产物（AppImage / `dx bundle`）——本次双目标改造未含，留后续
-- JSON 字符串转义 / 反转义
-- 多语言
-- 零闪烁的桌面启动主题（当前首帧可能极短浅色闪烁）
+- Package the desktop app into an installable artifact (AppImage / `dx bundle`) — not included in this dual-target rework, left for later
+- JSON string escape / unescape
+- Internationalization
+- A flicker-free desktop startup theme (the first frame may currently show a very brief light flash)
 
-## 📄 许可证
+## 📄 License
 
-MIT OR Apache-2.0（见 `Cargo.toml`）
+This project is licensed under the **[PolyForm Noncommercial License 1.0.0](./LICENSE)** (SPDX: `PolyForm-Noncommercial-1.0.0`).
+
+- **Source-available, noncommercial**: the source code is publicly readable and may be used for any **noncommercial purpose** — personal study, research, experimentation, use by nonprofit organizations, and so on; **any form of commercial use requires separate authorization**. This is a source-available noncommercial license and is **not an "open source" license** as defined by the OSI.
+- **The original developer is not bound by this restriction**: the noncommercial restriction applies only to licensees (the "you" in the license); the copyright holder (the licensor) retains all rights in the software — including use, modification, distribution, sublicensing, and commercial exploitation — and may grant commercial licenses to others. See the exemption NOTICE at the top of `LICENSE`.
+
+See the full terms in [`LICENSE`](./LICENSE) at the repository root.

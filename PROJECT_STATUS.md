@@ -189,7 +189,7 @@ cd dist && python3 serve.py
 
 **开发者**: Augment Agent  
 **技术栈**: Rust + Dioxus + WebAssembly  
-**许可证**: MIT OR Apache-2.0  
+**许可证**: PolyForm Noncommercial 1.0.0（见 LICENSE）  
 **项目状态**: ✅ 生产就绪  
 
 ---
