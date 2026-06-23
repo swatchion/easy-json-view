@@ -2,10 +2,10 @@
 name = "easy-json-view"
 version = "1.0.0"
 edition = "2021"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["swatchion <swatchion@gmail.com>"]
 description = "一个使用 Dioxus 框架开发的 JSON 格式化工具（桌面 + Web 双目标）"
 license-file = "LICENSE"
-repository = "https://github.com/your-username/easy-json-view"
+repository = "https://github.com/swatchion/easy-json-view"
 keywords = ["json", "formatter", "gui", "dioxus", "desktop"]
 categories = ["command-line-utilities", "development-tools"]
 
