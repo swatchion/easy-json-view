@@ -1,0 +1,97 @@
+[package]
+name = "eazy-json-view"
+version = "1.0.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "一个使用 Dioxus 框架开发的 JSON 格式化工具（桌面 + Web 双目标）"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/your-username/eazy-json-view"
+keywords = ["json", "formatter", "gui", "dioxus", "desktop"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+# Dioxus 基座：不在此处启用任何 renderer 特性，渲染器由下方 [features] 按目标二选一。
+# 绝不同时开启 web 与 desktop 两个 renderer 特性。
+dioxus = { version = "0.7" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+sha1 = "0.10"
+# 多语言（i18n）：编译期内嵌 locales/*.yml，运行时 t!() 查表 + set_locale() 切换。两端共用。
+# 注意：t!/i18n! 仅在 bin crate（main.rs + app.rs）使用；service/lib 层保持语言无关，
+# 故 benches 与 `cargo test --lib --no-default-features` 不会拉入 rust-i18n 与译文。
+rust-i18n = "4"
+
+[features]
+# 默认 desktop：让 `cargo run/build/test/bench` 原生面向桌面工作（需系统 webkit2gtk-4.1 + libsoup-3.0）。
+# 纯逻辑测试可用 `cargo test --lib --no-default-features` 在不装 webkit 的前提下运行。
+default = ["desktop"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+
+# ===== 仅 Web/WASM 目标的依赖 =====
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = [
+    "Window", "Navigator", "Clipboard",
+    "Document", "Element", "HtmlAnchorElement",
+    "Blob", "Url",
+] }
+js-sys = "0.3"
+gloo-storage = "0.3"
+gloo-timers = { version = "0.3", features = ["futures"] }
+console_error_panic_hook = "0.1"
+
+# ===== 仅原生（桌面）目标的通用依赖（三平台共用）=====
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# 用户配置目录定位（store.json 落盘）
+dirs = "6"
+# 运行时无关的异步计时器：替代 gloo-timers，规避 tokio reactor 依赖
+futures-timer = "3"
+
+# ===== 文件对话框（rfd）按操作系统分叉 =====
+# Linux：xdg-portal 后端——无 GTK、运行时无关（pollster 驱动），避免与 tao/wry 的 GTK 主循环冲突。
+# 注意：xdg-portal 依赖 ashpd（仅 Linux 生效），故不能用于 Windows/macOS，否则那两端无可用后端。
+[target.'cfg(all(not(target_arch = "wasm32"), target_os = "linux"))'.dependencies]
+rfd = { version = "0.17", default-features = false, features = ["xdg-portal"] }
+
+# macOS / Windows：用 rfd 默认特性，走系统原生对话框后端（Cocoa / Win32）。
+[target.'cfg(all(not(target_arch = "wasm32"), not(target_os = "linux")))'.dependencies]
+rfd = { version = "0.17" }
+
+[dev-dependencies]
+criterion = "0.5"
+tokio-test = "0.4"
+
+[[bench]]
+name = "json_performance"
+harness = false
+
+[lib]
+name = "eazy_json_view"
+path = "src/lib.rs"
+
+[[bin]]
+name = "eazy-json-view"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
+
+[package.metadata.appimage]
+auto_link = true
+auto_link_exclude_list = ["libc.so.6", "libdl.so.2", "libpthread.so.0"]

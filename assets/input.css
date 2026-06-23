@@ -1,0 +1,189 @@
+/* JetBrains Mono：JSON 内容 / 等宽元素用。远程 @import 在两端运行时加载；
+   离线或加载失败时回退到 fontFamily.mono 的系统等宽栈（见 tailwind.config.js）。
+   @import 必须位于所有规则之前（@charset 除外）。 */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== 共享控件类（@layer components）=====
+   原则：**几何/排版入类，配色一律留在元素内联工具类**（bg-panel / text-ink / border-line 等），
+   以便下方集中式 `html.dark .X { …!important }` 覆盖逐项命中——这是本仓库既有深色手法，
+   把「漏改一个深色映射」的风险降到可被一条 grep 机械核对。故组件类**不含任何颜色**。 */
+@layer components {
+    /* 按钮基座：布局 + 圆角 + 过渡 + 焦点环（accent）；不含字号与颜色 */
+    .btn {
+        @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-lg
+               transition-colors cursor-pointer
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+               disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+    /* 主按钮（格式化）：大号；配色 bg-accent text-white 在 RSX 内联 */
+    .btn-primary {
+        @apply btn px-4 py-2 text-sm font-semibold;
+    }
+    /* 次按钮（清空 / 压缩 / 复制 / 下载 / 示例 / 导入）：描边幽灵风；
+       边框宽度入类，border-fieldline / text-ink / bg-transparent 在 RSX 内联 */
+    .btn-secondary {
+        @apply btn border px-3 py-2 text-xs;
+    }
+    /* iOS 风格分段控件外壳：bg-field / border-fieldline 在 RSX 内联 */
+    .seg {
+        @apply inline-flex items-center gap-0.5 rounded-lg border p-0.5;
+    }
+    /* 分段控件项：激活/未激活配色在 RSX 内联（active=bg-panel text-ink shadow-sm） */
+    .seg-item {
+        @apply px-2.5 py-1.5 text-xs font-medium rounded-md whitespace-nowrap
+               transition-colors cursor-pointer
+               focus-visible:outline-none;
+    }
+    /* 统计 / 状态胶囊：配色在 RSX 内联（总数=accentsoft，类别=field+点色） */
+    .pill {
+        @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs whitespace-nowrap;
+    }
+    /* 输入框 / 文本域 / 下拉：几何 + 焦点环；bg-field / border-fieldline / text-ink 在 RSX 内联
+       （深色由下方通用表单控件规则统一覆盖） */
+    .field {
+        @apply rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-accent;
+    }
+}
+
+/* ===== 全局基样式 ===== */
+html,body { margin: 0; height: 100%; }
+body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 13px;
+    background: #e9edf3;            /* --app-bg 浅色 */
+    color: #16202f;                /* --text 浅色 */
+}
+::selection { background: rgba(47,107,255,.22); }
+
+/* 复选框强调色随主题 */
+input[type='checkbox'], input[type='radio'] { accent-color: #2f6bff; }
+
+/* 等宽内容默认行高（树/文本/输入框已显式带 font-mono；此处仅兜底） */
+pre, textarea { line-height: 1.6; }
+
+/* 自定义滚动条（.ejv-scroll 容器；浅色变体） */
+.ejv-scroll::-webkit-scrollbar { width: 11px; height: 11px; }
+.ejv-scroll::-webkit-scrollbar-thumb {
+    background: #e2e8f1; border-radius: 8px;
+    border: 3px solid transparent; background-clip: content-box;
+}
+.ejv-scroll::-webkit-scrollbar-thumb:hover { background: #93a0b3; }
+.ejv-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+/* 搜索命中高亮：当前匹配用 .ejv-mark-cur（更强），其余用 mark（--mark 系，浅色） */
+mark, .ejv-mark {
+    background: #ffe08a; color: #3a2c00;
+    border-radius: 2px; padding: 0 1px;
+}
+.ejv-mark-cur {
+    background: #ffb938; color: #3a2c00;
+    border-radius: 2px; padding: 0 1px;
+}
+
+/* ===== 树行交互态（plain CSS，沿用 prototype 手法）=====
+   行 hover 浅淡底；选中行同色；当前搜索匹配行强调底 + 左色条；hover 浮出节点动作。 */
+.ejv-row { border-radius: 6px; }
+.ejv-row:hover { background: rgba(20,32,55,.045); }
+.ejv-sel { background: rgba(20,32,55,.045); }
+.ejv-cur { background: #eaf0ff; box-shadow: inset 2px 0 0 #2f6bff; }
+.ejv-acts { opacity: 0; transition: opacity .12s; }
+.ejv-row:hover .ejv-acts { opacity: 1; }
+.ejv-ic:hover { color: #2f6bff; }
+html.dark .ejv-row:hover { background: rgba(255,255,255,.05); }
+html.dark .ejv-sel { background: rgba(255,255,255,.05); }
+html.dark .ejv-cur { background: #172741; box-shadow: inset 2px 0 0 #4f8bff; }
+html.dark .ejv-ic:hover { color: #4f8bff; }
+
+/* 分段控件激活项：浅色浮起白片 + 阴影；深色提亮到 #1d2735 + 更重阴影（对齐 prototype）。
+   因 bg-panel #121823 与 seg 轨道 bg-field #0c1119 对比过弱，激活态难以浮起，故单独着色。 */
+.seg-on { background-color: #ffffff; box-shadow: 0 1px 2px rgba(16,24,40,.16); }
+html.dark .seg-on { background-color: #1d2735; box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+
+/* ====================================================================
+   深色模式：集中式 `html.dark .X { …!important }` 覆盖（切 <html> dark 类即整体生效）。
+   按 prototype 深色令牌逐项重映射；蓝色强调（focus ring 等）保留。
+   组件类不含颜色 => 这里只需覆盖语义色【工具类】，按 bg / text / border 三组排列。
+   ==================================================================== */
+html.dark body { background: #0a0e15; color: #e6edf6; }
+
+/* —— 背景（bg-*）—— */
+html.dark .bg-app        { background-color: #0a0e15 !important; }
+html.dark .bg-panel      { background-color: #121823 !important; }
+html.dark .bg-panel2     { background-color: #0d131c !important; }
+html.dark .bg-headerbg   { background-color: #10151f !important; }
+html.dark .bg-field      { background-color: #0c1119 !important; }
+html.dark .bg-accent     { background-color: #4f8bff !important; }
+html.dark .bg-accentsoft { background-color: #172741 !important; }
+html.dark .bg-line       { background-color: #222c3a !important; }
+html.dark .bg-ink        { background-color: #e6edf6 !important; }  /* Toast：深色下为浅底 */
+html.dark .bg-muted2     { background-color: #69768a !important; }  /* 统计点（对象/数组）*/
+/* 统计点（语法色）*/
+html.dark .bg-key  { background-color: #79c0ff !important; }
+html.dark .bg-str  { background-color: #7ee787 !important; }
+html.dark .bg-num  { background-color: #ffa657 !important; }
+html.dark .bg-bool { background-color: #d2a8ff !important; }
+html.dark .bg-null { background-color: #8b949e !important; }
+
+/* —— 文本（text-*）—— */
+html.dark .text-ink    { color: #e6edf6 !important; }
+html.dark .text-muted  { color: #9aa7b8 !important; }
+html.dark .text-muted2 { color: #69768a !important; }
+html.dark .text-accent { color: #4f8bff !important; }
+html.dark .text-danger { color: #f0746b !important; }
+html.dark .text-panel  { color: #121823 !important; }  /* Toast 文字：深色下为深字（配 bg-ink 浅底）*/
+/* 语法高亮 token（深底更亮档） */
+html.dark .text-key   { color: #79c0ff !important; }
+html.dark .text-str   { color: #7ee787 !important; }
+html.dark .text-num   { color: #ffa657 !important; }
+html.dark .text-bool  { color: #d2a8ff !important; }
+html.dark .text-null  { color: #8b949e !important; }
+html.dark .text-punct { color: #5f6b7a !important; }
+
+/* —— 边框（border-*）—— */
+html.dark .border-line      { border-color: #222c3a !important; }
+html.dark .border-line2     { border-color: #1a2230 !important; }
+html.dark .border-fieldline { border-color: #28323f !important; }
+html.dark .border-guide     { border-color: #232c3a !important; }
+html.dark .border-accent    { border-color: #4f8bff !important; }
+
+/* —— hover 变体（转义选择器；覆盖幽灵按钮 / 历史卡 / 分段项的 hover 配色）—— */
+html.dark .hover\:text-ink:hover     { color: #e6edf6 !important; }
+html.dark .hover\:text-accent:hover  { color: #4f8bff !important; }
+html.dark .hover\:text-danger:hover  { color: #f0746b !important; }
+html.dark .hover\:border-muted2:hover { border-color: #69768a !important; }
+html.dark .hover\:border-accent:hover { border-color: #4f8bff !important; }
+html.dark .hover\:bg-field:hover     { background-color: #0c1119 !important; }
+html.dark .hover\:bg-accent:hover    { background-color: #4f8bff !important; }  /* 分栏拖动条 hover */
+
+/* —— 复选框强调色 —— */
+html.dark input[type='checkbox'], html.dark input[type='radio'] { accent-color: #4f8bff; }
+
+/* —— 表单控件：无显式 bg 的 input/textarea/select 统一深色（排除原生勾选/单选框）。
+      覆盖 .field 内联的 bg-field/text-ink，省去逐控件深色规则 —— */
+html.dark input:not([type='checkbox']):not([type='radio']),
+html.dark textarea,
+html.dark select {
+    background-color: #0c1119 !important;
+    color: #e6edf6 !important;
+    border-color: #28323f !important;
+}
+html.dark ::placeholder { color: #69768a !important; }
+
+/* —— 自定义滚动条（深色变体）—— */
+html.dark .ejv-scroll::-webkit-scrollbar-thumb { background: #222c3a; }
+html.dark .ejv-scroll::-webkit-scrollbar-thumb:hover { background: #69768a; }
+
+/* —— 搜索命中高亮（深色 --mark 系）—— */
+html.dark mark, html.dark .ejv-mark { background: #6b5310; color: #ffe9b0; }
+html.dark .ejv-mark-cur { background: #b8860b; color: #ffe9b0; }
+
+/* —— 文本选区（深色）—— */
+html.dark ::selection { background: rgba(79,139,255,.28); }
+
+/* —— 浮层阴影（深色）：语言菜单 / 拖拽遮罩卡 / About 弹窗为深 panel 浮在深背景上，
+      需更重阴影才有层次（对齐 prototype 深色 --shadow）—— */
+html.dark .shadow-panel { box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 32px -22px rgba(0,0,0,.7) !important; }

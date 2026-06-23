@@ -1,0 +1,91 @@
+# 生产构建流水线：三平台无签名安装包（Linux / macOS / Windows）。
+#
+# 只面向「生产」——触发面收敛到显式的生产信号，不为 dev/stage 的日常 push/PR 跑：
+#   - push 版本 tag（v*）：打 tag = 生产里程碑，产一批三平台安装包
+#   - workflow_dispatch：需要时在 Actions 页手动按一次
+#
+# 桌面端基于 wry（系统 WebView），无法跨系统交叉编译，故每个目标在「对应 OS 的 runner」上各构建一份。
+# 产物无签名：macOS 的 .dmg/.app 在他人机器首次打开需右键「打开」绕过 Gatekeeper；
+#            Windows 目标机若缺 WebView2 运行时需自行安装 Evergreen Runtime。
+name: build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+# 仅构建+上传 artifact，不发 Release：最小权限即可。
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    name: bundle (${{ matrix.platform }})
+    strategy:
+      # 一个平台失败不连累其它平台，三份产物尽量都拿到。
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            pkg: appimage
+          # macos-13（最后的 Intel 镜像）已于 2025-12 退役；改用 macos-15-intel
+          # ——Actions 最后的 x86_64 镜像（提供至 2027-08）。单 Intel 产物覆盖
+          # Intel 原生 + Apple Silicon（经 Rosetta），配合下方 deployment target 兼容 macOS 13+。
+          - os: macos-15-intel
+            platform: macos
+            pkg: dmg
+            macos_target: '13.0'
+          - os: windows-latest
+            platform: windows
+            pkg: nsis
+    runs-on: ${{ matrix.os }}
+    env:
+      # AppImage 打包工具在 CI（无交互、FUSE 可能缺失）下用「解包直跑」模式，规避 FUSE 报错。
+      # 仅影响 AppImage 工具链，对 macOS/Windows 无副作用。
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      # 缓存 cargo registry 与项目 target/，缩短后续构建时间。
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+
+      # Linux 桌面端系统依赖：WebKitGTK（webview）+ libsoup + libxdo（tao/global-hotkey 链接 -lxdo）。
+      - name: Install Linux desktop deps
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libxdo-dev
+
+      # 提供 cargo-binstall（下方优先用它装 dx，命中预编译包则秒装）。
+      - name: Setup cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      # dx（dioxus-cli）须与依赖 dioxus 版本一致（0.7.9）。binstall 在个别 runner
+      # （尤其 Windows）可能无预编译包，故失败回退到从源码 cargo install。
+      # shell: bash 确保 `||` 短路在 Windows 上也成立（windows runner 自带 Git Bash）。
+      - name: Install dx (dioxus-cli 0.7.9)
+        shell: bash
+        run: cargo binstall -y dioxus-cli@0.7.9 || cargo install dioxus-cli --version 0.7.9 --locked
+
+      # 样式 assets/tailwind.css 已入库，无需在 CI 重新生成（仅当改了 RSX 类名/input.css 时才须本地重生成并提交）。
+      # dx bundle 内部先 build 再打包；--out-dir 把最终产物扁平化到 dist/，路径跨平台一致。
+      # MACOSX_DEPLOYMENT_TARGET 仅对 macOS 生效：在 macOS 15 上构建却令产物可装到 macOS 13+。
+      - name: Bundle (${{ matrix.platform }} → ${{ matrix.pkg }})
+        shell: bash
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macos_target }}
+        run: dx bundle --platform ${{ matrix.platform }} --release --package-types ${{ matrix.pkg }} --out-dir dist
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: eazy-json-view-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error

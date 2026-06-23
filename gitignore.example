@@ -1,0 +1,76 @@
+# Rust 编译产物
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo 锁文件（对于应用程序，通常应该提交）
+# Cargo.lock
+
+# IDE 和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志文件
+*.log
+
+# 运行时数据
+*.pid
+*.seed
+*.pid.lock
+
+# 依赖目录
+node_modules/
+
+# 构建输出
+/dist/
+/build/
+
+# 测试覆盖率报告
+/coverage/
+
+# 临时文件
+*.tmp
+*.temp
+
+# 应用数据目录（开发时）
+.config/
+
+# 数据库文件（开发时）
+*.db
+*.sqlite
+*.sqlite3
+
+# 配置文件（包含敏感信息）
+config.toml
+.env
+.env.local
+
+# AppImage 构建产物
+*.AppImage
+*.appimage
+
+# 打包相关
+/pkg/
+/release/
+
+# 文档生成
+/book/
+
+# Tailwind CSS 生成文件
+/assets/css/tailwind.css
+
+# 备份文件
+*.bak
+*.backup

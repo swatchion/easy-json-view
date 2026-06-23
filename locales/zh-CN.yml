@@ -1,0 +1,160 @@
+_version: 1
+
+# EazyJsonView 简体中文译文。键与 en.yml 一一对应，动态占位 %{var} 必须同名同位。
+# 文案沿用 i18n 化之前界面上的原中文，保证现有用户观感不变。
+
+app:
+  subtitle: JSON 格式化工具
+
+lang:
+  menu_aria: 选择语言
+
+btn:
+  clear: 清空
+  clear_title: 清空输入与输出
+  format: 格式化 (Ctrl/⌘+Enter)
+  processing: 处理中...
+  minify: 压缩
+  minify_title: 压缩为单行
+  confirm: 确认
+  cancel: 取消
+  copy: 复制
+  copied: ✓ 已复制
+  download: 下载
+  sample: 示例
+  import: 导入
+  delete_title: 删除
+  close_title: 关闭
+
+err:
+  empty: JSON 内容不能为空
+  input_required: 请输入 JSON 内容
+  too_large: "输入过大（%{mb} MB，上限 10 MB），已取消处理"
+  process_failed: "处理失败：%{msg}"
+  incomplete: "第 %{line} 行第 %{col} 列：JSON 不完整，可能缺少结束符号"
+  syntax: "第 %{line} 行第 %{col} 列：%{msg}"
+
+search:
+  history_placeholder: 搜索历史记录...
+  result_placeholder: 在结果中搜索键/值...（Enter 下一个，Shift+Enter 上一个）
+  case_sensitive_title: 区分大小写
+  no_match: 无匹配
+  prev_title: 上一个匹配 (Shift+Enter)
+  next_title: 下一个匹配 (Enter)
+  clear_title: 清除搜索
+  clear_aria: 清除结果搜索
+
+history:
+  only_bookmarks: 只看书签 ★
+  only_bookmarks_title: 仅显示已加书签的记录
+  clear: 清空历史记录
+  empty_no_bookmarks: 还没有书签
+  empty_none: 暂无历史记录
+  empty_no_match: 未找到匹配的记录
+  bookmark: 加入书签
+  unbookmark: 取消书签
+  toggle_bookmark_aria: 切换书签
+  rename_title: 重命名
+  rename_aria: 重命名此记录
+  delete_aria: 删除此记录
+
+toolbar:
+  indent_size: "缩进大小:"
+  spaces: "%{n} 空格"
+  sort_keys: 排序键
+  sort_keys_title: 格式化时按字母序排序对象键
+  font_size: 字号
+  font_small: 小
+  font_medium: 中
+  font_large: 大
+  theme: 主题
+  density: 密度
+  density_comfortable: 舒适
+  density_compact: 紧凑
+  auto_format: 自动格式化
+  auto_format_title: 输入停顿约 600ms 后自动格式化（不写入历史；非法 JSON 静默）
+
+theme:
+  light: 浅色
+  dark: 深色
+
+view:
+  text: 文本
+  text_title: 文本视图（语法高亮 / 搜索）
+  tree: 树
+  tree_title: 树形视图（可折叠）
+  tree_disabled_title: 文档过大，请使用文本视图
+
+result:
+  title: 格式化结果
+  formatted_badge: ✓ 已格式化
+  invalid_badge: ⚠ 格式有误
+  copy_title: 复制格式化结果
+  download_title: 下载为 .json 文件
+  processing: 正在处理...
+  empty_hint: 格式化结果将显示在这里
+  line_numbers: 行号
+  line_numbers_title: 切换行号显示（文本视图）
+
+stats:
+  objects: "对象 %{n}"
+  arrays: "数组 %{n}"
+  keys: "键 %{n}"
+  strings: "字符串 %{n}"
+  numbers: "数字 %{n}"
+  booleans: "布尔 %{n}"
+  nulls: "Null %{n}"
+  total: "共 %{n} 个值"
+
+tree:
+  expand_all: 全部展开
+  expand_all_title: 展开所有层级
+  collapse_all: 折叠全部
+  collapse_all_title: 折叠深度 ≥ 1 的容器（仅保留顶层键可见）
+  collapse_l2: 折叠全部二级字段
+  collapse_l2_title: 折叠深度 ≥ 2 的容器（保留顶层及其直接子级可见）
+  fallback_notice: 无法以树形展示（文档过大或解析失败），已回退文本视图
+  copy_value: 复制值
+  copy_path: 复制路径
+
+input:
+  title: JSON 输入
+  placeholder: 在此输入 JSON 内容...
+  sample_title: 填入示例 JSON
+  import_title: 从文件导入 JSON
+  copy_title: 复制输入内容
+  stats: "字符数: %{chars}"
+  processing_badge: ⏳ 处理中...
+  success_badge: ✓ 格式化成功
+  hint_ctrl_enter: 按 Ctrl+Enter 格式化
+  drag_tip: 支持拖拽 .json 文件到窗口导入
+  drop_hint: 松开以导入 JSON 文件
+
+banner:
+  close_aria: 关闭提示
+
+# 可折叠侧栏（追加需求）
+sidebar:
+  collapse: 折叠侧栏
+  expand: 展开侧栏
+
+# 轻量 Toast 反馈
+toast:
+  imported: ✓ 已导入
+
+# 功能介绍（About）弹窗 —— 5 个差异化卖点。文案为初稿，待按产品口吻定稿。
+about:
+  button: 关于
+  title: 为什么选择 EazyJsonView？
+  subtitle: 一款尊重你数据的 JSON 格式化工具。
+  privacy_title: 不收集数据
+  privacy_desc: 没有埋点、无需账号、不收集任何个人信息——数据绝不离开你的设备。
+  local_title: 数据全本地
+  local_desc: 历史与设置只保存在你的浏览器或设备上的本地配置文件中。
+  bookmark_title: 收藏夹
+  bookmark_desc: 把常用片段加星标置顶，历史再多也不会被挤掉。
+  desktop_title: 原生桌面版
+  desktop_desc: 可作为真正的桌面窗口运行——无浏览器、无服务端、完全离线。
+  light_title: 极致轻量
+  light_desc: 以 Rust 构建，内存占用极低，格式化即时响应。
+  tech_stack: 由 Rust + Dioxus 倾力打造

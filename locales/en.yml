@@ -1,0 +1,174 @@
+_version: 1
+
+# EazyJsonView 英文译文（默认 / 回退语言）。
+# 键按 UI 区域分组。动态值用 %{var} 占位，必须与 zh-CN.yml 同名同位。
+# 品牌名 EazyJsonView、纯符号（★☆🗑️▶▼ 等）、语言名（中/EN）不在此——它们留在代码里不翻译。
+
+app:
+  subtitle: JSON formatter & validator
+
+# 界面语言切换（globe 下拉菜单）。语言自称（English / 中文）不在此——留在 LANGUAGES 常量里不翻译。
+lang:
+  menu_aria: Select language
+
+# 通用按钮文案（跨区域复用）
+btn:
+  clear: Clear
+  clear_title: Clear input and output
+  format: Format (Ctrl/⌘+Enter)
+  processing: Processing…
+  minify: Minify
+  minify_title: Minify to a single line
+  confirm: Confirm
+  cancel: Cancel
+  copy: Copy
+  copied: ✓ Copied
+  download: Download
+  sample: Sample
+  import: Import
+  delete_title: Delete
+  close_title: Close
+
+# 校验 / 处理错误（service 给结构化 kind，在此本地化）
+err:
+  empty: JSON input cannot be empty
+  input_required: Please enter JSON content
+  too_large: "Input too large (%{mb} MB, limit 10 MB) — cancelled"
+  process_failed: "Processing failed: %{msg}"
+  incomplete: "Line %{line}, column %{col}: JSON is incomplete — a closing bracket may be missing"
+  syntax: "Line %{line}, column %{col}: %{msg}"
+
+# 搜索（侧栏历史搜索 + 结果区键/值搜索）
+search:
+  history_placeholder: Search history…
+  result_placeholder: "Search keys/values in result… (Enter: next, Shift+Enter: prev)"
+  case_sensitive_title: Case sensitive
+  no_match: No match
+  prev_title: Previous match (Shift+Enter)
+  next_title: Next match (Enter)
+  clear_title: Clear search
+  clear_aria: Clear result search
+
+# 历史记录侧栏
+history:
+  only_bookmarks: Bookmarked only ★
+  only_bookmarks_title: Show bookmarked records only
+  clear: Clear history
+  empty_no_bookmarks: No bookmarks yet
+  empty_none: No history yet
+  empty_no_match: No matching records
+  bookmark: Add bookmark
+  unbookmark: Remove bookmark
+  toggle_bookmark_aria: Toggle bookmark
+  rename_title: Rename
+  rename_aria: Rename this record
+  delete_aria: Delete this record
+
+# 格式化选项工具栏
+toolbar:
+  indent_size: "Indent:"
+  spaces: "%{n} spaces"
+  sort_keys: Sort keys
+  sort_keys_title: Sort object keys alphabetically when formatting
+  font_size: Font
+  font_small: S
+  font_medium: M
+  font_large: L
+  theme: Theme
+  density: Density
+  density_comfortable: Comfortable
+  density_compact: Compact
+  auto_format: Auto-format
+  auto_format_title: Auto-format ~600ms after you stop typing (not saved to history; invalid JSON stays silent)
+
+# 主题切换（现作 sun/moon 图标按钮的 title；不含 emoji）
+theme:
+  light: Light
+  dark: Dark
+
+# 结果区视图切换（文本 / 树）
+view:
+  text: Text
+  text_title: Text view (syntax highlight / search)
+  tree: Tree
+  tree_title: Tree view (collapsible)
+  tree_disabled_title: Document too large, please use text view
+
+# 格式化结果区
+result:
+  title: Formatted result
+  formatted_badge: ✓ Formatted
+  invalid_badge: ⚠ Invalid
+  copy_title: Copy formatted result
+  download_title: Download as .json file
+  processing: Processing…
+  empty_hint: Formatted result will appear here
+  line_numbers: Line numbers
+  line_numbers_title: Toggle line numbers (text view)
+
+# JSON 统计（标签 + 计数）
+stats:
+  objects: "Objects %{n}"
+  arrays: "Arrays %{n}"
+  keys: "Keys %{n}"
+  strings: "Strings %{n}"
+  numbers: "Numbers %{n}"
+  booleans: "Booleans %{n}"
+  nulls: "Null %{n}"
+  total: "%{n} values total"
+
+# 树形视图折叠命令
+tree:
+  expand_all: Expand all
+  expand_all_title: Expand all levels
+  collapse_all: Collapse all
+  collapse_all_title: Collapse containers at depth ≥ 1 (keep only top-level keys visible)
+  collapse_l2: Collapse 2nd level
+  collapse_l2_title: Collapse containers at depth ≥ 2 (keep top level and its direct children visible)
+  fallback_notice: Cannot display as tree (document too large or parse failed); fell back to text view
+  copy_value: Copy value
+  copy_path: Copy path
+
+# JSON 输入区
+input:
+  title: JSON Input
+  placeholder: Enter JSON here…
+  sample_title: Fill in sample JSON
+  import_title: Import JSON from file
+  copy_title: Copy input content
+  stats: "Chars: %{chars}"
+  processing_badge: ⏳ Processing…
+  success_badge: ✓ Formatted
+  hint_ctrl_enter: Press Ctrl+Enter to format
+  drag_tip: Drag a .json file anywhere to import
+  drop_hint: Drop JSON file to import
+
+# 错误横幅
+banner:
+  close_aria: Dismiss notice
+
+# 可折叠侧栏（追加需求）
+sidebar:
+  collapse: Collapse sidebar
+  expand: Expand sidebar
+
+# 轻量 Toast 反馈
+toast:
+  imported: ✓ Imported
+
+# 功能介绍（About）弹窗 —— 5 个差异化卖点。文案为初稿，待按产品口吻定稿。
+about:
+  button: About
+  title: Why EazyJsonView?
+  subtitle: A JSON formatter that respects your data.
+  privacy_title: No tracking
+  privacy_desc: Zero analytics, no account, no personal data collected — nothing ever leaves your machine.
+  local_title: 100% local
+  local_desc: History and settings live only in your browser or a local config file on your device.
+  bookmark_title: Bookmarks
+  bookmark_desc: Star the snippets you reuse and keep them pinned, even as history grows.
+  desktop_title: Native desktop app
+  desktop_desc: Run it as a real desktop window — no browser, no server, fully offline.
+  light_title: Featherweight
+  light_desc: Built in Rust for a tiny memory footprint and instant formatting.
+  tech_stack: Proudly built with Rust + Dioxus

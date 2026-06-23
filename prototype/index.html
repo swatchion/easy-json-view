@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='0' y1='0' x2='48' y2='48' gradientUnits='userSpaceOnUse'><stop stop-color='%233b78ff'/><stop offset='1' stop-color='%231f53e0'/></linearGradient></defs><rect width='48' height='48' rx='13' fill='url(%23g)'/><path d='M20 14C17 14 17 18 17 21C17 23.5 15 24 13.5 24C15 24 17 24.5 17 27C17 30 17 34 20 34' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><path d='M28 14C31 14 31 18 31 21C31 23.5 33 24 34.5 24C33 24 31 24.5 31 27C31 30 31 34 28 34' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><circle cx='24' cy='24' r='3.4' fill='%2322d3ee'/></svg>">
+<style>
+:root{
+  --app-bg:#e9edf3; --panel:#ffffff; --panel-2:#f6f8fc; --header-bg:#ffffff;
+  --border:#e2e8f1; --border-2:#eef2f8;
+  --text:#16202f; --muted:#5d6b80; --muted-2:#93a0b3;
+  --accent:#2f6bff; --accent-soft:#eaf0ff;
+  --field-bg:#f3f6fb; --field-border:#dde4ef;
+  --sx-key:#0b62d6; --sx-str:#1d8f4e; --sx-num:#b4530c; --sx-bool:#8a3ffc; --sx-null:#7a8699; --sx-punct:#9aa7b9; --sx-caret:#94a3b8;
+  --row-hover:rgba(20,32,55,.045); --mark:#ffe08a; --mark-ink:#3a2c00; --guide:#e7ecf3;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 12px 30px -20px rgba(16,24,40,.22);
+  --danger:#e1574e;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+[data-theme="dark"]{
+  --app-bg:#0a0e15; --panel:#121823; --panel-2:#0d131c; --header-bg:#10151f;
+  --border:#222c3a; --border-2:#1a2230;
+  --text:#e6edf6; --muted:#9aa7b8; --muted-2:#69768a;
+  --accent:#4f8bff; --accent-soft:#172741;
+  --field-bg:#0c1119; --field-border:#28323f;
+  --sx-key:#79c0ff; --sx-str:#7ee787; --sx-num:#ffa657; --sx-bool:#d2a8ff; --sx-null:#8b949e; --sx-punct:#5f6b7a; --sx-caret:#6e7681;
+  --row-hover:rgba(255,255,255,.05); --mark:#6b5310; --mark-ink:#ffe9b0; --guide:#232c3a;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -22px rgba(0,0,0,.7);
+  --danger:#f0746b;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{background:var(--app-bg);}
+::selection{background:rgba(47,107,255,.22);}
+.ejv-scroll::-webkit-scrollbar{width:11px;height:11px;}
+.ejv-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;border:3px solid transparent;background-clip:content-box;}
+.ejv-scroll::-webkit-scrollbar-thumb:hover{background:var(--muted-2);}
+.ejv-scroll::-webkit-scrollbar-corner{background:transparent;}
+.ejv-row{border-radius:6px;}
+.ejv-row:hover{background:var(--row-hover);}
+.ejv-tg{cursor:pointer;}
+.ejv-seg{display:inline-flex;background:var(--field-bg);border:1px solid var(--field-border);border-radius:9px;padding:2px;}
+.ejv-seg button{font:inherit;font-size:12px;line-height:1;border:0;background:transparent;color:var(--muted);padding:6px 11px;border-radius:7px;cursor:pointer;transition:.12s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.ejv-seg button:hover{color:var(--text);}
+.ejv-seg button[data-active="true"]{background:var(--panel);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.16);}
+[data-theme="dark"] .ejv-seg button[data-active="true"]{background:#1d2735;box-shadow:0 1px 2px rgba(0,0,0,.5);}
+mark{background:var(--mark);color:var(--mark-ink);border-radius:2px;padding:0 1px;}
+.ejv-acts{opacity:0;transition:opacity .12s;}
+.ejv-row:hover .ejv-acts{opacity:1;}
+.ejv-ic:hover{color:var(--accent);background:var(--row-hover);}
+input::placeholder,textarea::placeholder{color:var(--muted-2);}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="--accent:{{ accent }};position:fixed;inset:0;display:flex;background:var(--app-bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:13px;">
+
+  <aside style="width:300px;flex-shrink:0;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:16px 18px 15px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <svg width="26" height="26" viewBox="0 0 48 48" fill="none" style="flex-shrink:0;display:block;"><defs><linearGradient id="brandg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#3b78ff"></stop><stop offset="1" stop-color="#1f53e0"></stop></linearGradient></defs><rect width="48" height="48" rx="12" fill="url(#brandg)"></rect><path d="M21 14 C18 14 18 18 18 21 C18 23.5 16 24 14.5 24 C16 24 18 24.5 18 27 C18 30 18 34 21 34" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M27 14 C30 14 30 18 30 21 C30 23.5 32 24 33.5 24 C32 24 30 24.5 30 27 C30 30 30 34 27 34" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="24" cy="18.4" r="1.7" fill="#fff" opacity=".85"></circle><circle cx="24" cy="24" r="2.8" fill="#22d3ee"></circle><circle cx="24" cy="29.6" r="1.7" fill="#fff" opacity=".85"></circle></svg>
+        <span style="font-size:17px;font-weight:800;letter-spacing:-.022em;color:var(--text);">Eazy<span style="color:var(--accent);">JsonView</span></span>
+        <div style="flex:1;"></div>
+        <div style="position:relative;">
+          <button onClick="{{ onToggleLangMenu }}" style="display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12px;color:var(--text);background:var(--field-bg);border:1px solid var(--field-border);border-radius:8px;padding:6px 8px 6px 9px;cursor:pointer;transition:.12s;" style-hover="border-color:var(--muted-2);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"></path></svg>
+            <span style="white-space:nowrap;">{{ langLabel }}</span>
+            <svg width="9" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="transform:{{ langChevron }};transition:transform .14s;color:var(--muted);"><path d="M1 1l4 4 4-4"></path></svg>
+          </button>
+          <sc-if value="{{ langMenu }}" hint-placeholder-val="">
+            <div onClick="{{ onCloseLangMenu }}" style="position:fixed;inset:0;z-index:55;"></div>
+            <div style="position:absolute;top:calc(100% + 7px);right:0;z-index:60;background:var(--panel);border:1px solid var(--border);border-radius:11px;box-shadow:var(--shadow);padding:5px;min-width:128px;">
+              <button onClick="{{ onLangZh }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;font:inherit;font-size:12.5px;color:var(--text);background:transparent;border:0;border-radius:7px;padding:8px 11px;cursor:pointer;text-align:left;" style-hover="background:var(--row-hover);">中文<span style="color:var(--accent);font-weight:700;">{{ checkZh }}</span></button>
+              <button onClick="{{ onLangEn }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;font:inherit;font-size:12.5px;color:var(--text);background:transparent;border:0;border-radius:7px;padding:8px 11px;cursor:pointer;text-align:left;" style-hover="background:var(--row-hover);">English<span style="color:var(--accent);font-weight:700;">{{ checkEn }}</span></button>
+            </div>
+          </sc-if>
+        </div>
+        <button title="{{ t.info }}" style="width:27px;height:27px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;flex-shrink:0;font-size:13px;font-style:italic;font-family:Georgia,'Times New Roman',serif;" style-hover="color:var(--text);border-color:var(--muted-2);">i</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:5px;letter-spacing:.01em;">{{ t.subtitle }}</div>
+    </div>
+
+    <div style="padding:13px 16px 11px;display:flex;flex-direction:column;gap:11px;border-bottom:1px solid var(--border-2);">
+      <div style="position:relative;">
+        <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted-2);display:flex;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg></span>
+        <input value="{{ historySearch }}" onChange="{{ onHistorySearch }}" placeholder="{{ t.searchHis }}" style="width:100%;font:inherit;font-size:12.5px;color:var(--text);background:var(--field-bg);border:1px solid var(--field-border);border-radius:9px;padding:9px 12px 9px 33px;outline:none;">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--muted);">
+          <input type="checkbox" checked="{{ bookmarksOnly }}" onChange="{{ onToggleBookmarks }}" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;">
+          <span style="color:#e8a200;">★</span> {{ t.bmOnly }}
+        </label>
+        <button onClick="{{ clearHistory }}" style="display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11.5px;background:transparent;border:0;color:var(--danger);cursor:pointer;padding:4px 6px;border-radius:6px;" style-hover="background:var(--row-hover);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M9 7V4h6v3"></path><path d="M6 7l1 13h10l1-13"></path></svg>
+          {{ t.clearHis }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ejv-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:11px 13px;display:flex;flex-direction:column;gap:8px;">
+      <sc-if value="{{ hasHistory }}" hint-placeholder-val="{{ true }}">
+        <sc-for list="{{ historyList }}" as="h" hint-placeholder-count="3">
+          <div onClick="{{ h.onOpen }}" style="border:1px solid var(--border-2);background:var(--panel-2);border-radius:11px;padding:10px 12px;cursor:pointer;transition:border-color .12s,background .12s;" style-hover="border-color:var(--accent);background:var(--field-bg);">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);">{{ h.id }}</span>
+              <div style="flex:1;"></div>
+              <button onClick="{{ h.onStar }}" style="background:transparent;border:0;cursor:pointer;font-size:14px;line-height:1;padding:0;color:{{ h.starColor }};">{{ h.star }}</button>
+            </div>
+            <div style="font-size:10.5px;color:var(--muted-2);font-family:var(--mono);margin-top:3px;">{{ h.time }}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:7px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ h.preview }}</div>
+          </div>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{ noHistory }}" hint-placeholder-val="">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;padding:38px 16px;text-align:center;color:var(--muted-2);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-9 9z"></path><path d="M12 7v5l3 2"></path></svg>
+          <span style="font-size:12px;">{{ t.noHis }}</span>
+        </div>
+      </sc-if>
+    </div>
+  </aside>
+
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+
+    <header class="ejv-scroll" style="display:flex;align-items:center;gap:18px;height:58px;flex-shrink:0;padding:0 18px;background:var(--header-bg);border-bottom:1px solid var(--border);overflow-x:auto;overflow-y:hidden;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11.5px;color:var(--muted);white-space:nowrap;">{{ t.indent }}</span>
+        <select value="{{ indent }}" onChange="{{ onIndent }}" style="font:inherit;font-size:12px;color:var(--text);background-color:var(--field-bg);border:1px solid var(--field-border);border-radius:8px;padding:7px 28px 7px 11px;cursor:pointer;appearance:none;outline:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2394a3b8' stroke-width='1.5'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 10px center;">
+          <option value="2">{{ t.sp2 }}</option>
+          <option value="4">{{ t.sp4 }}</option>
+          <option value="tab">{{ t.tab }}</option>
+        </select>
+      </div>
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11.5px;color:var(--muted);white-space:nowrap;">
+        <input type="checkbox" checked="{{ sortKeys }}" onChange="{{ onToggleSort }}" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;">
+        {{ t.sort }}
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11.5px;color:var(--muted);white-space:nowrap;">{{ t.font }}</span>
+        <div class="ejv-seg">
+          <button data-active="{{ fontSm }}" onClick="{{ onFontSm }}">{{ t.s }}</button>
+          <button data-active="{{ fontMd }}" onClick="{{ onFontMd }}">{{ t.m }}</button>
+          <button data-active="{{ fontLg }}" onClick="{{ onFontLg }}">{{ t.l }}</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11.5px;color:var(--muted);white-space:nowrap;">{{ t.theme }}</span>
+        <div class="ejv-seg">
+          <button data-active="{{ themeLight }}" onClick="{{ onThemeLight }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"></path></svg>{{ t.light }}</button>
+          <button data-active="{{ themeDark }}" onClick="{{ onThemeDark }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.2 6.2 0 0 0 10.5 10.5z"></path></svg>{{ t.dark }}</button>
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11.5px;color:var(--muted);white-space:nowrap;">
+        <input type="checkbox" checked="{{ autoFormat }}" onChange="{{ onToggleAuto }}" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;">
+        {{ t.auto }}
+      </label>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:9px;flex-shrink:0;">
+        <button onClick="{{ clearAll }}" style="font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;border-radius:9px;padding:8px 13px;cursor:pointer;border:1px solid var(--field-border);background:transparent;color:var(--text);transition:.12s;white-space:nowrap;" style-hover="border-color:var(--muted-2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9 9l6 6M15 9l-6 6"></path></svg>{{ t.clear }}</button>
+        <button onClick="{{ minify }}" style="font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;border-radius:9px;padding:8px 13px;cursor:pointer;border:1px solid var(--field-border);background:transparent;color:var(--text);transition:.12s;white-space:nowrap;" style-hover="border-color:var(--muted-2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"></path><path d="M20 10h-6V4"></path><path d="M14 10l7-7"></path><path d="M3 21l7-7"></path></svg>{{ t.minify }}</button>
+        <button onClick="{{ doFormat }}" style="font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 15px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:600;transition:.12s;white-space:nowrap;box-shadow:0 7px 18px -9px var(--accent);" style-hover="filter:brightness(1.07);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19l8-8"></path><path d="M13 3.5l1.1 2.6L16.7 7l-2.6 1.1L13 10.7l-1.1-2.6L9.3 7l2.6-.9z"></path><path d="M18.5 12.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"></path></svg>{{ t.format }}<span style="opacity:.72;font-weight:500;font-size:11px;">{{ t.formatHint }}</span></button>
+      </div>
+    </header>
+
+    <div style="flex:1;min-height:0;display:flex;overflow:hidden;">
+
+      <section style="flex:2;min-width:0;display:flex;flex-direction:column;background:var(--panel);overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;height:53px;padding:0 16px;border-bottom:1px solid var(--border-2);flex-shrink:0;">
+          <h2 style="font-size:13px;font-weight:700;margin:0;letter-spacing:.01em;white-space:nowrap;flex-shrink:0;">{{ t.result }}</h2>
+          <sc-if value="{{ valid }}" hint-placeholder-val="{{ true }}">
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#16a34a;background:rgba(22,163,74,.1);border-radius:999px;padding:3px 9px;white-space:nowrap;flex-shrink:0;">✓ {{ t.okFmt }}</span>
+          </sc-if>
+          <sc-if value="{{ isError }}" hint-placeholder-val="">
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--danger);background:rgba(225,87,78,.12);border-radius:999px;padding:3px 9px;white-space:nowrap;flex-shrink:0;">⚠ {{ t.badFmt }}</span>
+          </sc-if>
+          <div style="flex:1;"></div>
+          <div class="ejv-seg">
+            <button data-active="{{ viewText }}" onClick="{{ onViewText }}">{{ t.vText }}</button>
+            <button data-active="{{ viewTree }}" onClick="{{ onViewTree }}">{{ t.vTree }}</button>
+          </div>
+          <button onClick="{{ copyResult }}" style="font:inherit;font-size:12px;display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:7px 11px;cursor:pointer;border:1px solid var(--field-border);background:transparent;color:var(--text);transition:.12s;" style-hover="border-color:var(--muted-2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>{{ t.copy }}</button>
+          <button onClick="{{ download }}" style="font:inherit;font-size:12px;display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:7px 11px;cursor:pointer;border:1px solid var(--field-border);background:transparent;color:var(--text);transition:.12s;" style-hover="border-color:var(--muted-2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 11l5 5 5-5"></path><path d="M5 21h14"></path></svg>{{ t.download }}</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;height:53px;padding:0 16px;border-bottom:1px solid var(--border-2);flex-shrink:0;">
+          <div style="position:relative;flex:1;min-width:90px;">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted-2);display:flex;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg></span>
+            <input value="{{ search }}" onChange="{{ onSearch }}" onKeyDown="{{ onSearchKey }}" placeholder="{{ t.searchRes }}" style="width:100%;font:inherit;font-size:12.5px;color:var(--text);background:var(--field-bg);border:1px solid var(--field-border);border-radius:9px;padding:8px 12px 8px 32px;outline:none;">
+          </div>
+          <div class="ejv-seg"><button data-active="{{ caseSensitive }}" onClick="{{ onToggleCase }}" title="{{ t.caseHint }}" style="font-weight:600;">Aa</button></div>
+          <sc-if value="{{ hasSearch }}" hint-placeholder-val="">
+            <span style="font-size:11.5px;color:var(--muted);white-space:nowrap;min-width:42px;text-align:center;font-variant-numeric:tabular-nums;">{{ matchLabel }}</span>
+            <button onClick="{{ navPrev }}" title="{{ t.prev }}" style="width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--field-border);background:transparent;color:var(--muted);border-radius:7px;cursor:pointer;flex-shrink:0;" style-hover="border-color:var(--muted-2);color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"></path></svg></button>
+            <button onClick="{{ navNext }}" title="{{ t.next }}" style="width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--field-border);background:transparent;color:var(--muted);border-radius:7px;cursor:pointer;flex-shrink:0;" style-hover="border-color:var(--muted-2);color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+          </sc-if>
+          <span style="width:1px;height:22px;background:var(--border);flex-shrink:0;"></span>
+          <button onClick="{{ expandAll }}" style="font:inherit;font-size:11.5px;border-radius:7px;padding:7px 11px;cursor:pointer;border:1px solid var(--field-border);background:transparent;color:var(--muted);transition:.12s;white-space:nowrap;flex-shrink:0;" style-hover="color:var(--text);border-color:var(--muted-2);">{{ t.expandAll }}</button>
+          <button onClick="{{ collapseAll }}" style="font:inherit;font-size:11.5px;border-radius:7px;padding:7px 11px;cursor:pointer;border:1px solid var(--field-border);background:transparent;color:var(--muted);transition:.12s;white-space:nowrap;flex-shrink:0;" style-hover="color:var(--text);border-color:var(--muted-2);">{{ t.collapseAll }}</button>
+          <button onClick="{{ collapseL2 }}" style="font:inherit;font-size:11.5px;border-radius:7px;padding:7px 11px;cursor:pointer;border:1px solid var(--field-border);background:transparent;color:var(--muted);transition:.12s;white-space:nowrap;flex-shrink:0;" style-hover="color:var(--text);border-color:var(--muted-2);">{{ t.collapseL2 }}</button>
+        </div>
+
+        <div style="flex:1;min-height:0;position:relative;">
+          <sc-if value="{{ showTree }}" hint-placeholder-val="{{ true }}">
+            <div class="ejv-scroll" ref="{{ treeScrollRef }}" style="position:absolute;inset:0;overflow:auto;padding:12px 10px 28px;font-family:var(--mono);font-size:{{ treeFont }};line-height:1.7;">{{ treeView }}</div>
+          </sc-if>
+          <sc-if value="{{ showText }}" hint-placeholder-val="">
+            <div class="ejv-scroll" style="position:absolute;inset:0;overflow:auto;padding:14px 16px 28px;"><pre style="margin:0;font-family:var(--mono);font-size:{{ treeFont }};line-height:1.7;color:var(--text);white-space:pre;">{{ formattedText }}</pre></div>
+          </sc-if>
+          <sc-if value="{{ isError }}" hint-placeholder-val="">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;padding:30px;text-align:center;">
+              <div style="width:46px;height:46px;border-radius:50%;background:rgba(225,87,78,.12);color:var(--danger);display:grid;place-items:center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v5"></path><path d="M12 16.5v.5"></path><circle cx="12" cy="12" r="9.5"></circle></svg></div>
+              <div style="font-weight:700;font-size:14px;color:var(--text);">{{ t.errTitle }}</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--danger);background:var(--field-bg);border:1px solid var(--border);border-radius:9px;padding:11px 15px;max-width:520px;word-break:break-word;">{{ errorMsg }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isEmpty }}" hint-placeholder-val="">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;padding:30px;text-align:center;color:var(--muted-2);">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1"></path><path d="M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1"></path></svg>
+              <span style="font-size:13px;">{{ t.empty }}</span>
+            </div>
+          </sc-if>
+        </div>
+        <div class="ejv-scroll" style="display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-height:40px;padding:7px 16px;border-top:1px solid var(--border-2);flex-shrink:0;overflow-x:auto;">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);font-size:11px;font-weight:700;color:var(--accent);white-space:nowrap;">{{ totalLabel }}</span>
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="7">
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:var(--field-bg);border:1px solid var(--border-2);font-size:11px;color:var(--muted);white-space:nowrap;">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ s.color }};"></span>
+                {{ s.label }}
+                <b style="color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;">{{ s.v }}</b>
+              </span>
+            </sc-for>
+          </div>
+      </section>
+
+      <section style="flex:1;min-width:0;border-left:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;height:53px;padding:0 16px;border-bottom:1px solid var(--border-2);flex-shrink:0;">
+          <h2 style="font-size:13px;font-weight:700;margin:0;letter-spacing:.01em;white-space:nowrap;flex-shrink:0;">{{ t.input }}</h2>
+          <div style="flex:1;"></div>
+          <sc-if value="{{ valid }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#16a34a;background:rgba(22,163,74,.1);border-radius:999px;padding:3px 9px;white-space:nowrap;">✓ {{ t.okFmt }}</span></sc-if>
+          <sc-if value="{{ isError }}" hint-placeholder-val=""><span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--danger);background:rgba(225,87,78,.12);border-radius:999px;padding:3px 9px;white-space:nowrap;">⚠ {{ t.badFmt }}</span></sc-if>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;height:53px;padding:0 16px;border-bottom:1px solid var(--border-2);flex-shrink:0;">
+          <div style="flex:1;"></div>
+          <button onClick="{{ loadExample }}" style="font:inherit;font-size:12px;display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--field-border);color:var(--muted);cursor:pointer;padding:7px 11px;border-radius:8px;transition:.12s;" style-hover="border-color:var(--muted-2);color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.2 5.6L20 9.2l-4.4 3.8 1.4 5.8L12 15.7 7 18.8l1.4-5.8L4 9.2l5.8-.6z"></path></svg>{{ t.example }}</button>
+          <button onClick="{{ openFile }}" style="font:inherit;font-size:12px;display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--field-border);color:var(--muted);cursor:pointer;padding:7px 11px;border-radius:8px;transition:.12s;" style-hover="border-color:var(--muted-2);color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V5"></path><path d="M7 9l5-5 5 5"></path><path d="M5 21h14"></path></svg>{{ t.importf }}</button>
+          <button onClick="{{ copyInput }}" style="font:inherit;font-size:12px;display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--field-border);color:var(--muted);cursor:pointer;padding:7px 11px;border-radius:8px;transition:.12s;" style-hover="border-color:var(--muted-2);color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>{{ t.copy }}</button>
+        </div>
+        <div style="flex:1;min-height:0;position:relative;">
+          <textarea class="ejv-scroll" value="{{ raw }}" onChange="{{ onRaw }}" placeholder="{{ t.inputPh }}" spellcheck="false" style="position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:var(--panel-2);color:var(--text);font-family:var(--mono);font-size:12.5px;line-height:1.7;padding:14px 16px;"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;min-height:40px;padding:0 16px;border-top:1px solid var(--border-2);font-size:11px;color:var(--muted-2);font-family:var(--mono);flex-shrink:0;">
+          <span>{{ charLabel }}</span>
+          <span>{{ lineLabel }}</span>
+          <div style="flex:1;"></div>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-family:system-ui,-apple-system,'Segoe UI','PingFang SC',sans-serif;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M5 20h14"></path></svg>{{ t.dragTip }}</span>
+        </div>
+        <input type="file" accept=".json,application/json,text/plain" onChange="{{ onImportFile }}" ref="{{ fileRef }}" style="display:none;">
+      </section>
+
+    </div>
+  </main>
+
+  <sc-if value="{{ dragOver }}" hint-placeholder-val="">
+    <div style="position:fixed;inset:0;z-index:300;background:rgba(10,16,28,.5);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;pointer-events:none;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:38px 52px;border:2px dashed var(--accent);border-radius:18px;background:var(--panel);color:var(--accent);font-size:15px;font-weight:700;box-shadow:var(--shadow);"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M5 20h14"></path></svg>{{ t.dropHint }}</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ toast }}" hint-placeholder-val="">
+    <div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--text);color:var(--panel);font-size:12.5px;font-weight:600;padding:10px 20px;border-radius:999px;box-shadow:0 14px 34px -12px rgba(0,0,0,.5);z-index:200;">{{ toastMsg }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2f6bff&quot;,&quot;options&quot;:[&quot;#2f6bff&quot;,&quot;#7c3aed&quot;,&quot;#0ea5e9&quot;,&quot;#10b981&quot;,&quot;#e8643c&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;defaultTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  DICT = {
+    zh:{ subtitle:'JSON 格式化 · 树形查看工具', indent:'缩进', sp2:'2 空格', sp4:'4 空格', tab:'Tab 制表符', sort:'排序键', font:'字号', s:'小', m:'中', l:'大', theme:'主题', light:'浅色', dark:'深色', auto:'自动格式化', clear:'清空', minify:'压缩', format:'格式化', formatHint:'⌘/Ctrl+Enter', result:'格式化结果', vText:'文本', vTree:'树形', okFmt:'已格式化', badFmt:'格式有误', copy:'复制', download:'下载', expandAll:'全部展开', collapseAll:'全部折叠', collapseL2:'折叠二级', searchRes:'在结果中搜索键 / 值…', caseHint:'区分大小写', match:'匹配', searchHis:'搜索历史记录…', bmOnly:'只看书签', clearHis:'清空', input:'JSON 输入', example:'示例', importf:'导入', noHis:'暂无历史记录', empty:'粘贴或导入 JSON 以开始', inputPh:'在此粘贴 JSON…', errTitle:'JSON 解析失败', objects:'对象', arrays:'数组', keys:'键', strings:'字符串', numbers:'数字', booleans:'布尔', nulls:'Null', copyVal:'复制值', copyPath:'复制路径', dropHint:'松开以导入 JSON 文件', prev:'上一个匹配', next:'下一个匹配', dragTip:'支持拖拽 .json 文件到窗口导入', info:'轻量的 JSON 格式化与树形查看工具' },
+    en:{ subtitle:'JSON Formatter · Tree Viewer', indent:'Indent', sp2:'2 spaces', sp4:'4 spaces', tab:'Tab', sort:'Sort keys', font:'Font', s:'S', m:'M', l:'L', theme:'Theme', light:'Light', dark:'Dark', auto:'Auto-format', clear:'Clear', minify:'Minify', format:'Format', formatHint:'⌘/Ctrl+Enter', result:'Result', vText:'Text', vTree:'Tree', okFmt:'Formatted', badFmt:'Invalid', copy:'Copy', download:'Download', expandAll:'Expand all', collapseAll:'Collapse all', collapseL2:'Collapse L2', searchRes:'Search keys / values…', caseHint:'Match case', match:'matches', searchHis:'Search history…', bmOnly:'Bookmarks', clearHis:'Clear', input:'JSON Input', example:'Example', importf:'Import', noHis:'No history yet', empty:'Paste or import JSON to begin', inputPh:'Paste JSON here…', errTitle:'Failed to parse JSON', objects:'Objects', arrays:'Arrays', keys:'Keys', strings:'Strings', numbers:'Numbers', booleans:'Booleans', nulls:'Null', copyVal:'Copy value', copyPath:'Copy path', dropHint:'Drop JSON file to import', prev:'Previous match', next:'Next match', dragTip:'Drag a .json file anywhere to import', info:'A lightweight JSON formatter & tree viewer' }
+  };
+
+  sample = {
+    seller_open_uid:'AAHjNYCiAHeV0dZM8jfQJFmB', buyer_open_uid:'AAGjNYCiAHeV0dZM8jfE3RjV', refund_id:'268230506514367896', status:'SUCCESS', seller_nick:'nordicnaturals海外旗舰店', buyer_nick:'兮**', tid:3304223868037004874, oid:3304223868037004874, created:'2026-05-27 00:21:15', modified:'2026-05-27 00:21:25', advance_status:0, alipay_no:'2026052423001266391447562881', attribute:';fundFlowInfo:CASH^ALIPAY_FUND^支付宝^81513|OTHER_ASSETS^OTHER_ASSETS_GROUP^优惠^30387;bizCode:tmall.hk.refund;disputeRequest:1;leavesCat:50026872;apply_reason_text:多拍/拍错/不想要;itemBuyAmount:3;interceptItemListResult:[{"subBizOrderId":"3304223868037004874","interceptDate":"May 27, 2026 12:21:25 AM","logisticInterceptEnum":"INTERCEPT_SUCCESS"}];seller_batch:true;clj_zero_second_refund:1;cPartRefund:0;_F_tlmType:B_taobao;sku:6041581981371|颜色分类:高倍Omega鱼油双倍版+维生素D3 60粒;sgr:0;bgmtc:2026-05-24 22:35:42;jibuBizCode:tmall.jibu;interceptType:clj;agreeSource:rtee;shop_name:NordicNaturals海外旗舰店;ttid:201200@taobao_iphone_10.61.10;nrp:1;sync:0;workflowName:refund', cs_status:1, desc:'', good_status:'BUYER_NOT_RECEIVED', has_good_return:false, num:3, num_iid:1028443994476, operation_contraint:'on_web', order_status:'TRADE_CLOSED', outer_id:'768990021558', payment:'0.00', price:'511.00', reason:'多拍/拍错/不想要', refund_fee:'1119.00', refund_phase:'onsale', refund_version:1779812475616, sku:'6041581981371|颜色分类:高倍Omega鱼油双倍版+维生素D3 60粒', title:'挪威小鱼成人高倍Omega深海鱼油rTG双倍版维生素D3+DHA+EPA软胶囊', total_fee:'1119.00', end_time:'2026-05-27 00:21:21'
+  };
+
+  state = {
+    raw:'', applied:'', lang:'zh', theme:'light', fontKey:'md', indent:'4',
+    sortKeys:false, autoFormat:true, viewMode:'tree', search:'', caseSensitive:false,
+    collapsed:{}, history:[], historySearch:'', bookmarksOnly:false, toast:false, toastMsg:'', langMenu:false, currentMatch:0, selectedPath:'', dragOver:false
+  };
+
+  constructor(props){
+    super(props);
+    const r = JSON.stringify(this.sample).replace(/"tid":\d+/,'"tid":3304223868037004874').replace(/"oid":\d+/,'"oid":3304223868037004874');
+    this.sampleText = r;
+    this.state.raw = r; this.state.applied = r;
+    if(props && props.defaultTheme) this.state.theme = props.defaultTheme;
+  }
+
+  componentDidMount(){
+    try{
+      const s = JSON.parse(localStorage.getItem('ejv_state_v1') || '{}');
+      const patch = {};
+      ['lang','theme','fontKey','indent','sortKeys','autoFormat','viewMode','raw','applied','historySearch'].forEach(k=>{ if(s[k]!==undefined) patch[k]=s[k]; });
+      if(Array.isArray(s.history)) patch.history = s.history;
+      if(Object.keys(patch).length) this.setState(patch);
+    }catch(e){}
+    this._key = (e)=>{ if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); this.doFormat(); } };
+    window.addEventListener('keydown', this._key);
+    this._dragDepth=0;
+    this._wover=(e)=>{ if(this._isFileDrag(e)) e.preventDefault(); };
+    this._wenter=(e)=>{ if(this._isFileDrag(e)){ this._dragDepth++; if(!this.state.dragOver) this.setState({dragOver:true}); } };
+    this._wleave=(e)=>{ if(this._isFileDrag(e)){ this._dragDepth--; if(this._dragDepth<=0){ this._dragDepth=0; this.setState({dragOver:false}); } } };
+    this._wdrop=(e)=>{ e.preventDefault(); this._dragDepth=0; this.setState({dragOver:false}); const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) this.readDropped(f); };
+    window.addEventListener('dragover', this._wover); window.addEventListener('dragenter', this._wenter); window.addEventListener('dragleave', this._wleave); window.addEventListener('drop', this._wdrop);
+  }
+  componentWillUnmount(){ window.removeEventListener('keydown', this._key); window.removeEventListener('dragover', this._wover); window.removeEventListener('dragenter', this._wenter); window.removeEventListener('dragleave', this._wleave); window.removeEventListener('drop', this._wdrop); if(this._tt) clearTimeout(this._tt); }
+
+  componentDidUpdate(){ if(this._scrollPath){ const id='ejv-n-'+this.hashId(this._scrollPath); this._scrollPath=null; const el=document.getElementById(id); const cont=this._treeScroll; if(el&&cont){ cont.scrollTop = Math.max(0, el.offsetTop - cont.clientHeight/2 + el.clientHeight/2); } } }
+
+  persist(over){
+    const s = Object.assign({}, this.state, over||{});
+    try{ localStorage.setItem('ejv_state_v1', JSON.stringify({
+      lang:s.lang, theme:s.theme, fontKey:s.fontKey, indent:s.indent, sortKeys:s.sortKeys,
+      autoFormat:s.autoFormat, viewMode:s.viewMode, raw:s.raw, applied:s.applied,
+      historySearch:s.historySearch, history:s.history
+    })); }catch(e){}
+  }
+  set(patch){ this.setState(patch, ()=>this.persist()); }
+
+  showToast(msg){ if(this._tt) clearTimeout(this._tt); this.setState({toast:true, toastMsg:msg}); this._tt = setTimeout(()=>this.setState({toast:false}), 1500); }
+
+  fmtTime(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()); }
+  hashId(s){ let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return ('0000000'+h.toString(16)).slice(-7); }
+
+  preBig(text){ let out=''; let i=0; const n=text.length; let inStr=false; while(i<n){ const c=text[i]; if(inStr){ out+=c; if(c==='\\'){ out+=text[i+1]||''; i+=2; continue; } if(c==='"') inStr=false; i++; continue; } if(c==='"'){ inStr=true; out+=c; i++; continue; } if((c>='0'&&c<='9') || (c==='-'&&text[i+1]>='0'&&text[i+1]<='9')){ let j=i; if(text[j]==='-')j++; while(j<n&&text[j]>='0'&&text[j]<='9')j++; let flt=false; if(text[j]==='.'){flt=true;j++;while(j<n&&text[j]>='0'&&text[j]<='9')j++;} if(text[j]==='e'||text[j]==='E'){flt=true;j++;if(text[j]==='+'||text[j]==='-')j++;while(j<n&&text[j]>='0'&&text[j]<='9')j++;} const raw=text.slice(i,j); if(!flt && !Number.isSafeInteger(Number(raw))) out+='"\uE000'+raw+'\uE000"'; else out+=raw; i=j; continue; } out+=c; i++; } return out; }
+  parseJSON(text){ const pre=this.preBig(text); const conv=(v)=>{ if(typeof v==='string'){ const m=/^\uE000([\s\S]+)\uE000$/.exec(v); return m?{__big:true, raw:m[1]}:v; } if(Array.isArray(v)) return v.map(conv); if(v && typeof v==='object'){ const o={}; for(const k in v) o[k]=conv(v[k]); return o; } return v; }; return conv(JSON.parse(pre)); }
+
+  formattedText(value){ const unit = this.state.indent==='tab' ? '\t' : ' '.repeat(Number(this.state.indent)); return this.stringifyJSON(value, unit); }
+  stringifyJSON(value, unit){ const sort=this.state.sortKeys; const pad=(d)=> unit==='' ? '' : '\n'+unit.repeat(d); const enc=(v,d)=>{ if(v && typeof v==='object' && v.__big) return v.raw; if(v===null) return 'null'; const tp=typeof v; if(tp==='number'||tp==='boolean') return String(v); if(tp==='string') return JSON.stringify(v); if(Array.isArray(v)){ if(!v.length) return '[]'; return '['+v.map(x=>pad(d+1)+enc(x,d+1)).join(',')+pad(d)+']'; } if(tp==='object'){ let ks=Object.keys(v); if(sort) ks=ks.sort(); if(!ks.length) return '{}'; const sep= unit===''?':':': '; return '{'+ks.map(k=>pad(d+1)+JSON.stringify(k)+sep+enc(v[k],d+1)).join(',')+pad(d)+'}'; } return 'null'; }; return enc(value,0); }
+
+  walkStats(value){ const c={objects:0,arrays:0,keys:0,strings:0,numbers:0,booleans:0,nulls:0}; const walk=(v)=>{ if(v && typeof v==='object' && v.__big){ c.numbers++; return; } if(Array.isArray(v)){ c.arrays++; v.forEach(walk); } else if(v && typeof v==='object'){ c.objects++; const ks=Object.keys(v); c.keys+=ks.length; ks.forEach(k=>walk(v[k])); } else if(v===null) c.nulls++; else if(typeof v==='string') c.strings++; else if(typeof v==='number') c.numbers++; else if(typeof v==='boolean') c.booleans++; }; walk(value); return c; }
+
+  collectContainers(value, path, depth, out){ if(value && typeof value==='object' && !value.__big){ out.push({path, depth}); const entries = Array.isArray(value) ? value.map((v,i)=>[i,v]) : Object.keys(value).map(k=>[k,value[k]]); entries.forEach(([k,v])=>this.collectContainers(v, path+'/'+k, depth+1, out)); } return out; }
+
+  pathToExpr(path){ const parts=path.split('/'); let out='$'; for(let k=1;k<parts.length;k++){ const seg=parts[k]; if(/^\d+$/.test(seg)) out+='['+seg+']'; else if(/^[A-Za-z_$][\w$]*$/.test(seg)) out+='.'+seg; else out+='["'+seg.replace(/"/g,'\\"')+'"]'; } return out; }
+  nodeValueText(value){ if(value && typeof value==='object' && value.__big) return value.raw; if(value && typeof value==='object') return this.formattedText(value); if(value===null) return 'null'; if(typeof value==='string') return value; return String(value); }
+  previewKeys(value){ const ks=Object.keys(value); const shown=ks.slice(0,4).join(', '); return shown + (ks.length>4?', \u2026':''); }
+
+  parsedValue(){ const r=this.state.applied.trim(); if(!r) return {empty:true}; try{ return {value: this.parseJSON(this.state.applied)}; }catch(e){ return {error:e.message}; } }
+
+  toggleNode(path){ const c=Object.assign({}, this.state.collapsed); if(c[path]) delete c[path]; else c[path]=true; this.setState({collapsed:c}); }
+  expandAll(){ this.setState({collapsed:{}}); }
+  collapseAll(){ const p=this.parsedValue(); if(!p.value) return; const out=this.collectContainers(p.value,'root',0,[]); const m={}; out.forEach(o=>{ m[o.path]=true; }); this.setState({collapsed:m}); }
+  collapseL2(){ const p=this.parsedValue(); if(!p.value) return; const out=this.collectContainers(p.value,'root',0,[]); const m={}; out.forEach(o=>{ if(o.depth>=1) m[o.path]=true; }); this.setState({collapsed:m}); }
+
+  doFormat(){ this.setState(st=>({applied:st.raw}), ()=>{ this.persist(); this.addHistory(this.state.raw); }); }
+  minify(){ try{ const v=this.parseJSON(this.state.raw); const m=this.stringifyJSON(v, ''); this.set({raw:m, applied:m}); this.showToast(this.DICT[this.state.lang].minify+' ✓'); }catch(e){ this.showToast('⚠ '+this.DICT[this.state.lang].badFmt); } }
+  clearAll(){ this.set({raw:'', applied:''}); }
+  loadExample(){ const r=this.sampleText; this.set({raw:r, applied:r}); this.addHistory(r); }
+  copyResult(){ const p=this.parsedValue(); const txt = p.value!==undefined ? this.formattedText(p.value) : this.state.applied; this.copy(txt); }
+  copyInput(){ this.copy(this.state.raw); }
+  copy(txt){ try{ navigator.clipboard.writeText(txt); }catch(e){} const t=this.DICT[this.state.lang]; this.showToast((t.copy)+' ✓'); }
+  download(){ const p=this.parsedValue(); const txt = p.value!==undefined ? this.formattedText(p.value) : this.state.applied; const blob=new Blob([txt],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='data.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+  openFile(){ if(this._file) this._file.click(); }
+  onImportFile(e){ const f=e.target.files && e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const txt=String(r.result); this.set({raw:txt, applied:txt}); this.addHistory(txt); }; r.readAsText(f); e.target.value=''; }
+
+  addHistory(raw){ const t=(raw||'').trim(); if(!t) return; const hist=this.state.history.slice(); if(hist[0] && hist[0].raw===raw) return; const preview=t.replace(/\s+/g,' ').slice(0,90); hist.unshift({ id:this.hashId(raw), ts:Date.now(), preview, raw, bm:false }); if(hist.length>60) hist.length=60; this.set({history:hist}); }
+  loadHistory(raw){ this.set({raw, applied:raw}); this.showToast(this.DICT[this.state.lang].okFmt+' ✓'); }
+  toggleBm(id){ const hist=this.state.history.map(h=> h.id===id ? Object.assign({}, h, {bm:!h.bm}) : h); this.set({history:hist}); }
+  clearHistory(){ this.set({history:[]}); }
+
+  collectMatches(value, path, key, out){ const q=this.state.search; if(!q) return out; const cs=this.state.caseSensitive; const needle=cs?q:q.toLowerCase(); const has=(s)=>{ if(s==null) return false; s=String(s); return (cs?s:s.toLowerCase()).indexOf(needle)>=0; }; const isBig = value && typeof value==='object' && value.__big; const isCont = value && typeof value==='object' && !isBig; let m = (key!=null && has(key)); if(!isCont){ const txt = isBig?value.raw:(value===null?'null':String(value)); if(has(txt)) m=true; } if(m) out.push(path); if(isCont){ const entries = Array.isArray(value)? value.map((v,k)=>[k,v]) : Object.keys(value).map(k=>[k,value[k]]); entries.forEach(([k,v])=>this.collectMatches(v, path+'/'+k, k, out)); } return out; }
+  navigateMatch(dir){ const m=this._matches||[]; if(!m.length) return; let idx=this.state.currentMatch; if(idx>=m.length) idx=0; idx=(idx+dir+m.length)%m.length; const path=m[idx]; const parts=path.split('/'); const collapsed=Object.assign({}, this.state.collapsed); for(let k=1;k<parts.length;k++){ const pre=parts.slice(0,k).join('/'); if(collapsed[pre]) delete collapsed[pre]; } this._scrollPath=path; this.setState({currentMatch:idx, collapsed, selectedPath:path}); }
+  onSearchKey(e){ if(e.key==='Enter'){ e.preventDefault(); this.navigateMatch(e.shiftKey?-1:1); } }
+  selectNode(path){ this.setState({selectedPath:path}); }
+  copyNodeVal(value){ this.copy(this.nodeValueText(value)); }
+  copyNodePath(path){ const ex=this.pathToExpr(path); try{ navigator.clipboard.writeText(ex); }catch(e){} this.showToast(ex); }
+  onDrop(e){ e.preventDefault(); this.setState({dragOver:false}); const f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const txt=String(r.result); this.set({raw:txt, applied:txt}); this.addHistory(txt); this.showToast(this.DICT[this.state.lang].importf+' \u2713'); }; r.readAsText(f); }
+  onDragOver(e){ e.preventDefault(); if(!this.state.dragOver) this.setState({dragOver:true}); }
+  onDragLeave(e){ e.preventDefault(); this.setState({dragOver:false}); }
+  _isFileDrag(e){ const dt=e.dataTransfer; if(!dt||!dt.types) return false; for(let i=0;i<dt.types.length;i++){ if(dt.types[i]==='Files') return true; } return false; }
+  readDropped(f){ const r=new FileReader(); r.onload=()=>{ const txt=String(r.result); this.set({raw:txt, applied:txt}); this.addHistory(txt); this.showToast(this.DICT[this.state.lang].importf+' ✓'); }; r.readAsText(f); }
+
+  highlight(str){ const q=this.state.search; if(!q) return str; const cs=this.state.caseSensitive; const hay=cs?str:str.toLowerCase(); const needle=cs?q:q.toLowerCase(); if(!needle) return str; const parts=[]; let i=0, idx; while((idx=hay.indexOf(needle,i))!==-1){ if(idx>i) parts.push(str.slice(i,idx)); parts.push(React.createElement('mark',{key:idx+'-'+i}, str.slice(idx,idx+needle.length))); i=idx+needle.length; if(needle.length===0) break; } parts.push(str.slice(i)); return parts; }
+
+  objEntries(obj){ const ks=this.state.sortKeys?Object.keys(obj).sort():Object.keys(obj); return ks.map(k=>[k,obj[k]]); }
+  spacer(){ return React.createElement('span',{style:{display:'inline-block',width:'15px',flexShrink:0}}); }
+  caret(collapsed){ return React.createElement('span',{style:{display:'inline-block',width:'15px',flexShrink:0,color:'var(--sx-caret)',fontSize:'9px',lineHeight:'1.95',transition:'transform .12s',transform:collapsed?'rotate(0deg)':'rotate(90deg)'}}, '\u25B6'); }
+  keyNode(key, isArrIndex){ const h=React.createElement; if(key===null||key===undefined) return null; if(isArrIndex) return h('span',{style:{color:'var(--sx-punct)',marginRight:'8px'}}, String(key)+':'); return h('span',{style:{marginRight:'2px'}}, h('span',{style:{color:'var(--sx-key)'}}, this.highlight(String(key))), h('span',{style:{color:'var(--sx-punct)',marginLeft:'1px',marginRight:'6px'}}, ':')); }
+  primNode(value){ const h=React.createElement; if(value && typeof value==='object' && value.__big) return h('span',{style:{color:'var(--sx-num)'}}, this.highlight(value.raw)); if(value===null) return h('span',{style:{color:'var(--sx-null)'}}, 'null'); const tp=typeof value; if(tp==='string') return h('span',{style:{color:'var(--sx-str)',wordBreak:'break-word'}}, '"', this.highlight(value), '"'); if(tp==='number') return h('span',{style:{color:'var(--sx-num)'}}, this.highlight(String(value))); if(tp==='boolean') return h('span',{style:{color:'var(--sx-bool)',fontWeight:600}}, String(value)); return h('span',null,String(value)); }
+
+  rowActions(value, path){ const h=React.createElement; const stop=(fn)=>(e)=>{ e.stopPropagation(); fn(); }; const ic=(d)=>h('svg',{width:13,height:13,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'}, d); const btn=(title,onClick,d)=>h('button',{title,onClick:stop(onClick),className:'ejv-ic',style:{display:'inline-flex',border:0,background:'transparent',color:'var(--muted-2)',cursor:'pointer',padding:'3px',borderRadius:'5px'}}, ic(d)); return h('span',{className:'ejv-acts',style:{marginLeft:'auto',position:'sticky',right:'4px',display:'inline-flex',gap:'1px',paddingLeft:'14px',flexShrink:0,alignSelf:'center'}}, btn(this.DICT[this.state.lang].copyVal, ()=>this.copyNodeVal(value), [h('rect',{key:1,x:9,y:9,width:11,height:11,rx:2}),h('path',{key:2,d:'M5 15V5a2 2 0 0 1 2-2h10'})]), btn(this.DICT[this.state.lang].copyPath, ()=>this.copyNodePath(path), [h('path',{key:1,d:'M6 9l6 6 6-6'})])); }
+
+  renderEntry(key, value, path, depth){
+    const h=React.createElement;
+    const isBig = value && typeof value==='object' && value.__big;
+    const isObj = value && typeof value==='object' && !isBig;
+    const padY = (this.props && this.props.density==='compact') ? '0.5px' : '2px';
+    const indentPx = 8+depth*18;
+    const isArrIndex = typeof key==='number';
+    const isCur = path===this._currentPath;
+    const isSel = path===this.state.selectedPath;
+    const baseRow = {display:'flex',alignItems:'flex-start',padding:padY+' 8px',paddingLeft:indentPx+'px'};
+    if(isCur){ baseRow.background='var(--accent-soft)'; baseRow.boxShadow='inset 2px 0 0 var(--accent)'; }
+    else if(isSel){ baseRow.background='var(--row-hover)'; }
+    const idAttr = isCur ? ('ejv-n-'+this.hashId(path)) : undefined;
+    if(!isObj){
+      return h('div',{key:path, id:idAttr, className:'ejv-row', style:baseRow, onClick:()=>this.selectNode(path)}, this.spacer(), this.keyNode(key,isArrIndex), this.primNode(value), this.rowActions(value,path));
+    }
+    const isArr = Array.isArray(value);
+    const entries = isArr ? value.map((v,i)=>[i,v]) : this.objEntries(value);
+    const open = isArr?'[':'{', close = isArr?']':'}';
+    const collapsed = !!this.state.collapsed[path];
+    const head = h('div',{key:path+'~h', id:idAttr, className:'ejv-row ejv-tg', style:baseRow, onClick:()=>{ this.selectNode(path); this.toggleNode(path); }},
+      this.caret(collapsed),
+      this.keyNode(key,isArrIndex),
+      h('span',{style:{color:'var(--sx-punct)'}}, open),
+      collapsed ? (isArr ? h('span',{style:{color:'var(--sx-punct)'}}, ' \u2026 '+close) : h('span',{style:{color:'var(--muted-2)',fontStyle:'italic',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'320px'}}, ' '+this.previewKeys(value)+' '+close)) : null,
+      collapsed ? h('span',{style:{marginLeft:'8px',fontSize:'.78em',color:'var(--muted)',background:'var(--field-bg)',border:'1px solid var(--border-2)',borderRadius:'999px',padding:'0 7px',lineHeight:'1.7',flexShrink:0}}, String(entries.length)) : null,
+      this.rowActions(value,path)
+    );
+    if(collapsed) return head;
+    const kids = entries.map(([k,v])=>this.renderEntry(k,v,path+'/'+k,depth+1));
+    const childrenWrap = h('div',{key:path+'~k', style:{position:'relative'}}, h('div',{style:{position:'absolute', left:(indentPx+7)+'px', top:0, bottom:0, width:'1px', background:'var(--guide)'}}), kids);
+    const tail = h('div',{key:path+'~c', className:'ejv-row', style:{display:'flex',alignItems:'flex-start',padding:padY+' 8px',paddingLeft:indentPx+'px'}}, this.spacer(), h('span',{style:{color:'var(--sx-punct)'}}, close));
+    return h('div',{key:path}, head, childrenWrap, tail);
+  }
+
+  renderVals(){
+    const st=this.state; const lang=st.lang; const t=this.DICT[lang];
+    const FT={sm:'12px',md:'13.5px',lg:'15.5px'};
+    const accent = (this.props && this.props.accent) ? this.props.accent : '#2f6bff';
+    const p=this.parsedValue();
+    const isEmpty = !!p.empty;
+    const isError = !!p.error;
+    const valid = !isEmpty && !isError;
+    let counts={objects:0,arrays:0,keys:0,strings:0,numbers:0,booleans:0,nulls:0}, total=0;
+    if(valid){ counts=this.walkStats(p.value); total=counts.objects+counts.arrays+counts.strings+counts.numbers+counts.booleans+counts.nulls; }
+    const matches = (valid && st.search) ? this.collectMatches(p.value,'root',null,[]) : [];
+    this._matches = matches;
+    const curIdx = matches.length ? Math.min(st.currentMatch, matches.length-1) : 0;
+    this._currentPath = matches.length ? matches[curIdx] : null;
+    const treeView = valid ? this.renderEntry(null, p.value, 'root', 0) : null;
+    const formattedText = valid ? this.formattedText(p.value) : st.applied;
+    const matchLabel = matches.length ? ((curIdx+1)+' / '+matches.length) : '0 / 0';
+    const colorMap={objects:'var(--muted-2)',arrays:'var(--muted-2)',keys:'var(--sx-key)',strings:'var(--sx-str)',numbers:'var(--sx-num)',booleans:'var(--sx-bool)',nulls:'var(--sx-null)'};
+    const stats=['objects','arrays','keys','strings','numbers','booleans','nulls'].map(k=>({label:t[k], v:counts[k], color:colorMap[k]}));
+    const totalLabel = lang==='zh' ? ('\u5171 '+total+' \u4e2a\u503c') : (total+' values');
+    const hq=st.historySearch.trim().toLowerCase();
+    const historyList = st.history
+      .filter(h=> (!st.bookmarksOnly||h.bm) && (!hq || h.preview.toLowerCase().indexOf(hq)>=0 || h.id.indexOf(hq)>=0))
+      .map(h=>({ id:h.id, time:this.fmtTime(h.ts), preview:h.preview, star:h.bm?'\u2605':'\u2606', starColor:h.bm?'#e8a200':'var(--muted-2)', onOpen:()=>this.loadHistory(h.raw), onStar:(e)=>{ e.stopPropagation(); this.toggleBm(h.id); } }));
+    const charCount=st.raw.length; const lineCount = st.raw ? st.raw.split('\n').length : 0;
+
+    return {
+      theme:st.theme, accent,
+      langZh:lang==='zh', langEn:lang==='en',
+      langMenu:st.langMenu, langLabel: lang==='zh' ? '\u4e2d\u6587' : 'English',
+      langChevron: st.langMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+      checkZh: lang==='zh' ? '\u2713' : '', checkEn: lang==='en' ? '\u2713' : '',
+      onToggleLangMenu:()=>this.setState(s=>({langMenu:!s.langMenu})),
+      onCloseLangMenu:()=>this.setState({langMenu:false}),
+      themeLight:st.theme==='light', themeDark:st.theme==='dark',
+      fontSm:st.fontKey==='sm', fontMd:st.fontKey==='md', fontLg:st.fontKey==='lg',
+      viewText:st.viewMode==='text', viewTree:st.viewMode==='tree',
+      indent:st.indent, sortKeys:st.sortKeys, autoFormat:st.autoFormat, bookmarksOnly:st.bookmarksOnly,
+      t, treeFont:FT[st.fontKey],
+      raw:st.raw, search:st.search, caseSensitive:st.caseSensitive,
+      hasSearch:!!st.search, matchLabel, hasMatches:matches.length>0,
+      valid, isError, errorMsg:p.error||'', isEmpty,
+      showTree: valid && st.viewMode==='tree', showText: valid && st.viewMode==='text',
+      treeView, formattedText, stats, totalLabel,
+      historySearch:st.historySearch, historyList, hasHistory:historyList.length>0, noHistory:historyList.length===0,
+      charLabel: lang==='zh' ? (charCount+' \u5b57\u7b26') : (charCount+' chars'),
+      lineLabel: lang==='zh' ? (lineCount+' \u884c') : (lineCount+' lines'),
+      toast:st.toast, toastMsg:st.toastMsg,
+      fileRef:(el)=>{ this._file=el; },
+      onLangZh:()=>this.set({lang:'zh', langMenu:false}), onLangEn:()=>this.set({lang:'en', langMenu:false}),
+      onThemeLight:()=>this.set({theme:'light'}), onThemeDark:()=>this.set({theme:'dark'}),
+      onFontSm:()=>this.set({fontKey:'sm'}), onFontMd:()=>this.set({fontKey:'md'}), onFontLg:()=>this.set({fontKey:'lg'}),
+      onViewText:()=>this.set({viewMode:'text'}), onViewTree:()=>this.set({viewMode:'tree'}),
+      onIndent:(e)=>this.set({indent:e.target.value}),
+      onToggleSort:(e)=>this.set({sortKeys:e.target.checked}),
+      onToggleAuto:(e)=>{ const v=e.target.checked; this.setState(s=>({autoFormat:v, applied: v ? s.raw : s.applied}), ()=>this.persist()); },
+      onToggleBookmarks:(e)=>this.set({bookmarksOnly:e.target.checked}),
+      onRaw:(e)=>{ const v=e.target.value; this.setState(s=>({raw:v, applied: s.autoFormat ? v : s.applied}), ()=>this.persist()); },
+      onSearch:(e)=>this.setState({search:e.target.value, currentMatch:0}),
+      onToggleCase:()=>this.setState(s=>({caseSensitive:!s.caseSensitive, currentMatch:0})),
+      onHistorySearch:(e)=>this.set({historySearch:e.target.value}),
+      doFormat:()=>this.doFormat(), minify:()=>this.minify(), clearAll:()=>this.clearAll(),
+      loadExample:()=>this.loadExample(), copyResult:()=>this.copyResult(), copyInput:()=>this.copyInput(),
+      download:()=>this.download(), openFile:()=>this.openFile(), onImportFile:(e)=>this.onImportFile(e),
+      expandAll:()=>this.expandAll(), collapseAll:()=>this.collapseAll(), collapseL2:()=>this.collapseL2(),
+      clearHistory:()=>this.clearHistory(),
+      onSearchKey:(e)=>this.onSearchKey(e), navPrev:()=>this.navigateMatch(-1), navNext:()=>this.navigateMatch(1),
+      treeScrollRef:(el)=>{ this._treeScroll=el; },
+      dragOver:st.dragOver, onDrop:(e)=>this.onDrop(e), onDragOver:(e)=>this.onDragOver(e), onDragLeave:(e)=>this.onDragLeave(e)
+    };
+  }
+}
+</script>
+</body>
+</html>

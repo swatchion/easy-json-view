@@ -1,0 +1,14 @@
+# Dioxus CLI 配置。
+# 注意：默认平台不在此声明——dx 从 Cargo.toml 的 [features] default 推断；
+# 本项目 default = ["desktop"] → desktop = ["dioxus/desktop"]，故 `dx serve/build`
+# 不带 --platform 时默认走桌面。Web 构建用 `dx build --platform web`。
+
+[application]
+# asset_dir / out_dir 采用默认值（assets/、目标平台各自的输出目录）。
+
+[web.app]
+title = "EazyJsonView - JSON 格式化工具"
+
+# 打包图标（供 `dx bundle` 用，非运行时窗口图标——运行时图标见 main.rs 的 with_window_icon）
+[bundle]
+icon = ["assets/icon.png"]

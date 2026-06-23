@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 浏览器标签页图标（与 prototype 同款）：渐变圆角底 + 白花括号 + 青色中节点。data-URI SVG，零依赖。 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='0' y1='0' x2='48' y2='48' gradientUnits='userSpaceOnUse'><stop stop-color='%233b78ff'/><stop offset='1' stop-color='%231f53e0'/></linearGradient></defs><rect width='48' height='48' rx='13' fill='url(%23g)'/><path d='M20 14C17 14 17 18 17 21C17 23.5 15 24 13.5 24C15 24 17 24.5 17 27C17 30 17 34 20 34' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><path d='M28 14C31 14 31 18 31 21C31 23.5 33 24 34.5 24C33 24 31 24.5 31 27C31 30 31 34 28 34' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><circle cx='24' cy='24' r='3.4' fill='%2322d3ee'/></svg>">
+    <!-- 标题由 Dioxus.toml [web.app] title 注入，避免与此处重复 -->
+    <!-- JetBrains Mono（Web）：preconnect 提前建连，stylesheet 早于打包 CSS 的 @import 触发加载。
+         桌面 webview 不经此 <head>，靠 assets/input.css 的 @import 加载；两端均回退系统等宽栈。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        // 防深色闪烁（Web 专用）：在打包样式 / WASM 加载与首屏渲染之前，依据已存配置即时给
+        // <html> 打上 dark 类，使首屏直接是深色。gloo_storage 以 JSON 字符串存储 AppConfig，
+        // 故按 ui_settings.theme 判断。整段 try/catch 包裹：缺失/损坏的配置绝不阻塞 <head>。
+        try {
+            var raw = localStorage.getItem('eazy_json_view_config');
+            if (raw) {
+                var cfg = JSON.parse(raw);
+                if (cfg && cfg.ui_settings && cfg.ui_settings.theme === 'dark') {
+                    document.documentElement.className = 'dark';
+                }
+            }
+        } catch (e) { /* 忽略 */ }
+    </script>
+</head>
+<body>
+    <!-- 挂载点。WASM 引导脚本与打包样式由 dx 在构建时注入；Tailwind CSS 经 app.rs 的
+         document::Stylesheet + asset! 引入。手写的加载屏与 CDN 已移除。 -->
+    <div id="main"></div>
+</body>
+</html>
