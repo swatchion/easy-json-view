@@ -9,6 +9,9 @@
 [web.app]
 title = "Easy Json View - JSON 格式化工具"
 
-# 打包图标（供 `dx bundle` 用，非运行时窗口图标——运行时图标见 main.rs 的 with_window_icon）
+# 打包标识与图标（供 `dx bundle` 用）。
+# identifier：反向 DNS 包标识，dx bundle 必填——三平台（macOS bundle id / Windows / Linux）共用；缺失则 `dx bundle` 报错退出。
+# icon：打包图标，非运行时窗口图标——运行时图标见 main.rs 的 with_window_icon。
 [bundle]
+identifier = "com.swatchion.easy-json-view"
 icon = ["assets/icon.png"]

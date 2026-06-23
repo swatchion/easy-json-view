@@ -47,7 +47,7 @@ jobs:
       APPIMAGE_EXTRACT_AND_RUN: 1
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Rust (stable)
         uses: dtolnay/rust-toolchain@stable
@@ -84,7 +84,7 @@ jobs:
         run: dx bundle --platform ${{ matrix.platform }} --release --package-types ${{ matrix.pkg }} --out-dir dist
 
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: easy-json-view-${{ matrix.platform }}
           path: dist/*
