@@ -2,6 +2,8 @@
 
 # Easy Json View
 
+`OSX user need to run sudo xattr -d com.apple.quarantine /Applications/EasyJsonView.app`
+
 A modern JSON formatter / validator built with **Rust + Dioxus 0.7.9**, targeting **both desktop and Web from a single codebase**:
 
 - **Desktop** (default): a native window app (wry/webkit2gtk) — no browser, no server; history and config are stored in a single `store.json` under the user's config directory.
