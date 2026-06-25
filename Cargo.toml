@@ -52,6 +52,9 @@ futures-timer = "3"
 # 用系统默认浏览器打开外部 URL（About 弹窗的 GitHub 链接）。
 # 桌面 webview 内直接导航 <a href> 会替换掉应用页面，故须交给系统处理器（xdg-open/open/start）。
 open = "5"
+# 历史记录 zip 导入/导出（仅桌面）。default-features=false + CompressionMethod::Stored：
+# 历史均为小 JSON，免压缩特性 → 纯 Rust、无 C 依赖（deflate/bzip2/zstd 全关）、三平台稳。
+zip = { version = "8", default-features = false }
 
 # ===== 文件对话框（rfd）按操作系统分叉 =====
 # Linux：xdg-portal 后端——无 GTK、运行时无关（pollster 驱动），避免与 tao/wry 的 GTK 主循环冲突。

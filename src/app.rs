@@ -28,6 +28,12 @@ const SPLIT_MIN: f64 = 48.0;
 /// 首次使用时可一键填入的示例 JSON
 const SAMPLE_JSON: &str = r#"{"name":"Easy Json View","version":"1.0.0","tags":["json","formatter","wasm"],"active":true,"stars":42,"meta":{"author":"swatchion","license":"MIT"},"nested":{"list":[1,2,3],"empty":null}}"#;
 
+/// 启动加载屏样式（FOUC 屏障）。**必须是 const 字面量**：写进 rsx 的 `style{}` 时 rsx 会把 `{`
+/// 当插值，keyframe 花括号会编译失败——故经 `dangerous_inner_html` 注入整段。
+/// 背景与 `bg-app`（浅 #e9edf3 / 深 #0a0e15，见 input.css）及 main.rs 窗口底色一致 → 揭示无色块跳变；
+/// 旋转环主色用品牌蓝 #3b78ff。不含文案（避免 i18n 在 config 异步加载前显示默认英文再跳变）。
+const SPLASH_CSS: &str = "@keyframes ejv-spin{to{transform:rotate(360deg)}}#ejv-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#e9edf3}html.dark #ejv-splash{background:#0a0e15}.ejv-ring{width:38px;height:38px;border-radius:50%;border:3px solid rgba(59,120,255,.25);border-top-color:#3b78ff;animation:ejv-spin .7s linear infinite}";
+
 /// 将文本写入系统剪贴板（fire-and-forget，忽略返回的 Promise）。Web：浏览器 Clipboard API。
 #[cfg(target_arch = "wasm32")]
 fn copy_to_clipboard(text: &str) {
@@ -211,6 +217,22 @@ fn download_text(filename: &str, text: &str) {
             .await
         {
             let _ = std::fs::write(handle.path(), text);
+        }
+    });
+}
+
+/// 桌面：弹出「另存为」对话框，将二进制写入用户选定路径（mirror download_text，用于历史 zip 导出）。
+/// fire-and-forget：spawn 内异步弹窗 + std::fs::write；调用点在事件处理器内，scope 活跃。
+#[cfg(not(target_arch = "wasm32"))]
+fn save_bytes(filename: &str, bytes: Vec<u8>) {
+    let filename = filename.to_string();
+    spawn(async move {
+        if let Some(handle) = rfd::AsyncFileDialog::new()
+            .set_file_name(&filename)
+            .save_file()
+            .await
+        {
+            let _ = std::fs::write(handle.path(), &bytes);
         }
     });
 }
@@ -489,6 +511,8 @@ pub fn App() -> Element {
     let mut input_right = use_signal(|| 0f64);
     // mousedown 时测得的主区左缘视口坐标（=侧栏右缘）；用于把输出下限钳到 SPLIT_MIN，避免输出被挤到 0
     let mut input_left = use_signal(|| 0f64);
+    // 启动加载屏门控：false 时显示不依赖 Tailwind 的 spinner 遮罩；CSS 实测生效或 2s 兜底后翻 true。
+    let mut is_ready = use_signal(|| false);
 
     // 语言切换的响应式保险：显式读取 language，使 App() 订阅该字段——切换器写入时触发整树重渲染。
     let _lang = ui_settings.read().language.clone();
@@ -505,6 +529,36 @@ pub fn App() -> Element {
                 rust_i18n::set_locale(&cfg.ui_settings.language);
                 ui_settings.set(cfg.ui_settings);
             }
+        });
+    });
+
+    // 启动加载屏的揭示逻辑（独立于上面的读盘 effect）：两个幂等 spawn。
+    use_effect(move || {
+        // 检测：轮询一个隐藏探针 `.flex` 的 computed display——无 CSS 时 div 默认 `block`，
+        // tailwind.css 生效后 `.flex{display:flex}` 命中变 `flex` 即揭示。用二值 display
+        // （与主题/调色板无关），不用背景色（深浅不同会误判）。eval 的 await-返回值形式与
+        // 分栏拖动测量同款（已验证可用），不依赖未验证的 recv/send 流式 API。
+        // 安全：脚本为固定字面量、无任何用户输入插值，仅创建临时探针并读取 computed style
+        // （非 JS eval 任意输入；同 apply_theme/scroll_to_match 的 document::eval 用法）。
+        spawn(async move {
+            for _ in 0..40 {
+                if *is_ready.read() { break; }
+                let res = document::eval(
+                    "const p=document.createElement('div');p.className='flex';p.style.position='absolute';p.style.visibility='hidden';document.body.appendChild(p);const d=getComputedStyle(p).display;p.remove();return d;"
+                ).await;
+                if let Ok(v) = res {
+                    if v.as_str() == Some("flex") {
+                        is_ready.set(true);
+                        break;
+                    }
+                }
+                sleep_ms(50).await;
+            }
+        });
+        // 兜底：无论检测成败，2s 后揭示，绝不困住用户。
+        spawn(async move {
+            sleep_ms(2000).await;
+            is_ready.set(true);
         });
     });
 
@@ -1160,9 +1214,9 @@ pub fn App() -> Element {
                         }
                     }
                     div {
-                        class: "flex items-center justify-between",
+                        class: "flex items-center justify-between gap-2",
                         label {
-                            class: "flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none",
+                            class: "flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none min-w-0",
                             title: t!("history.only_bookmarks_title").to_string(),
                             input {
                                 r#type: "checkbox",
@@ -1171,20 +1225,81 @@ pub fn App() -> Element {
                                 onchange: move |event| show_bookmarks_only.set(event.checked()),
                             }
                             span { class: "text-[#e8a200]", "★" }
-                            span { {t!("history.only_bookmarks").to_string()} }
+                            span { class: "truncate", {t!("history.only_bookmarks").to_string()} }
                         }
-                        if !app_state.read().history_records.is_empty() {
-                            button {
-                                class: "inline-flex items-center gap-1.5 text-[11.5px] text-danger px-1.5 py-1 rounded-md hover:bg-field transition-colors",
-                                onclick: move |_| {
-                                    spawn(async move {
-                                        if let Ok(_) = HistoryService::clear_history().await {
-                                            app_state.write().history_records.clear();
+                        div {
+                            class: "flex items-center gap-1 shrink-0",
+                            // 历史 zip 导出/导入（仅桌面，作用于【历史记录】）——与输入区「导入到输入框」分开。
+                            // Web 端不出现这两钮（zip 依赖被 cfg 排除）。
+                            {
+                                #[cfg(not(target_arch = "wasm32"))]
+                                let zip_actions = rsx! {
+                                    if !app_state.read().history_records.is_empty() {
+                                        button {
+                                            class: "p-1 rounded text-muted hover:text-ink hover:bg-field transition-colors",
+                                            title: t!("btn.export_zip_title").to_string(),
+                                            "aria-label": t!("btn.export_zip").to_string(),
+                                            onclick: move |_| {
+                                                let records = app_state.read().history_records.clone();
+                                                match crate::services::export_zip(&records) {
+                                                    Ok(bytes) => {
+                                                        let ts = chrono::Local::now().format("%Y%m%d-%H%M%S");
+                                                        save_bytes(&format!("easy-json-view-history-{ts}.zip"), bytes);
+                                                        show_toast(t!("toast.exported").to_string());
+                                                    }
+                                                    Err(_) => show_toast(t!("toast.export_failed").to_string()),
+                                                }
+                                            },
+                                            {icon_download()}
                                         }
-                                    });
-                                },
-                                {icon_trash()}
-                                {t!("history.clear").to_string()}
+                                    }
+                                    button {
+                                        class: "p-1 rounded text-muted hover:text-ink hover:bg-field transition-colors",
+                                        title: t!("btn.import_zip_title").to_string(),
+                                        "aria-label": t!("btn.import_zip").to_string(),
+                                        onclick: move |_| {
+                                            spawn(async move {
+                                                if let Some(handle) = rfd::AsyncFileDialog::new()
+                                                    .add_filter("Zip", &["zip"])
+                                                    .pick_file()
+                                                    .await
+                                                {
+                                                    let bytes = handle.read().await;
+                                                    match crate::services::parse_zip(&bytes) {
+                                                        Ok(records) => match HistoryService::merge_records(records).await {
+                                                            Ok(added) => {
+                                                                if let Ok(all) = HistoryService::load_history().await {
+                                                                    app_state.write().history_records = all;
+                                                                }
+                                                                show_toast(t!("toast.merged", n = added).to_string());
+                                                            }
+                                                            Err(_) => show_toast(t!("toast.import_invalid").to_string()),
+                                                        },
+                                                        Err(_) => show_toast(t!("toast.import_invalid").to_string()),
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        {icon_file_up()}
+                                    }
+                                };
+                                #[cfg(target_arch = "wasm32")]
+                                let zip_actions = rsx! {};
+                                zip_actions
+                            }
+                            if !app_state.read().history_records.is_empty() {
+                                button {
+                                    class: "inline-flex items-center gap-1.5 text-[11.5px] text-danger px-1.5 py-1 rounded-md hover:bg-field transition-colors",
+                                    onclick: move |_| {
+                                        spawn(async move {
+                                            if let Ok(_) = HistoryService::clear_history().await {
+                                                app_state.write().history_records.clear();
+                                            }
+                                        });
+                                    },
+                                    {icon_trash()}
+                                    {t!("history.clear").to_string()}
+                                }
                             }
                         }
                     }
@@ -2327,6 +2442,17 @@ pub fn App() -> Element {
                             }
                         }
                     }
+                }
+            }
+
+            // ===== 启动加载屏（FOUC 屏障）=====
+            // SPLASH_CSS 无条件渲染（保证 keyframes 始终在位）；遮罩仅在 is_ready=false 时挂载。
+            // 真实 UI 始终挂在其下并被样式化，故检测探针能看到 CSS 生效——【勿】改为 if is_ready {app} else {splash}
+            // 的二选一渲染（那会阻止真实 UI 渲染/样式化，检测永远看不到 CSS 生效而死锁）。
+            style { dangerous_inner_html: SPLASH_CSS }
+            if !*is_ready.read() {
+                div { id: "ejv-splash",
+                    div { class: "ejv-ring" }
                 }
             }
         }

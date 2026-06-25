@@ -25,6 +25,10 @@ btn:
   import: 导入
   delete_title: 删除
   close_title: 关闭
+  export_zip: 导出
+  export_zip_title: 导出历史记录为 .zip 归档
+  import_zip: 导入 .zip
+  import_zip_title: 从 .zip 归档导入历史（合并进当前会话）
 
 err:
   empty: JSON 内容不能为空
@@ -141,6 +145,10 @@ sidebar:
 # 轻量 Toast 反馈
 toast:
   imported: ✓ 已导入
+  exported: ✓ 历史已导出
+  merged: "✓ 已合并 %{n} 条记录"
+  export_failed: 导出失败
+  import_invalid: 无效归档
 
 # 功能介绍（About）弹窗 —— 5 个差异化卖点。文案为初稿，待按产品口吻定稿。
 about:

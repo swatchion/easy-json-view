@@ -263,6 +263,10 @@ impl HistoryService {
     /// 保存历史记录
     pub async fn save_record(record: &HistoryRecord) -> Result<()> {
         let mut records = Self::load_history().await?;
+        // 高水位基线：load 后、去重插入前的长度。正常使用时 = 现有条数（≤MAX_RECORDS）；
+        // 导入后 = 导入规模（可 >MAX_RECORDS），使本次保存的上限取 MAX_RECORDS.max(baseline)，
+        // 不把导入的大批量记录按固定上限批量淘汰（详见 cap_records 与 merge_records）。
+        let baseline = records.len();
 
         // 若相同内容的旧记录曾被加书签，则在去重后保留书签标志（避免重复格式化导致书签丢失）
         let was_bookmarked = records
@@ -277,21 +281,10 @@ impl HistoryService {
         to_insert.bookmarked = record.bookmarked || was_bookmarked;
         records.insert(0, to_insert);
 
-        // 限制记录数量：书签记录永不被淘汰，剩余名额按新→旧填充非书签记录
-        if records.len() > Self::MAX_RECORDS {
-            let bookmarked_count = records.iter().filter(|r| r.bookmarked).count();
-            let mut budget = Self::MAX_RECORDS.saturating_sub(bookmarked_count);
-            records.retain(|r| {
-                if r.bookmarked {
-                    true
-                } else if budget > 0 {
-                    budget -= 1;
-                    true
-                } else {
-                    false
-                }
-            });
-        }
+        // 限制记录数量：上限取「固定 MAX_RECORDS」与「高水位基线」的较大者——
+        // 正常单条保存仍封顶 MAX_RECORDS；导入后以导入规模为高水位、不批量丢弃。
+        // 书签记录永不被淘汰（在 cap_records 内保证）。
+        cap_records(&mut records, Self::MAX_RECORDS.max(baseline));
 
         Storage::set(Self::STORAGE_KEY, &records)
             .map_err(|e| anyhow::anyhow!("保存历史记录失败: {:?}", e))?;
@@ -361,6 +354,47 @@ impl HistoryService {
         }
     }
 
+    /// 把导入的历史记录合并进当前会话：load → 重铸冲突 id → `merge_history_lists` → 持久化。
+    /// 返回新增（content-新）条数。**不施加上限**（合并阶段无界，见 `merge_history_lists`）。
+    ///
+    /// id 重铸（仅此异步层，纯函数 `merge_history_lists` 保持确定性）：对 content-新的 incoming 记录，
+    /// 若其 id 与「现有 id 或已分配 id」相撞，则用 `generate_id`（进程内单调自增计数器，必产唯一）重铸——
+    /// 避免跨机导入的 `…-0` 形 id 撞上现有 id，误伤 toggle_bookmark/delete/rename 的按-id 查找。
+    /// content-重复的 incoming 会在合并中折叠、其 id 被丢弃，故无需重铸。
+    ///
+    /// 仅桌面（导入/导出是桌面专属功能）：`cfg(not(wasm32))` 让 wasm 构建不含此死代码；
+    /// 原生单测（test 目标为原生，`not(wasm32)` 成立）仍可见，不影响 `merge_history_lists` 测试。
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn merge_records(incoming: Vec<HistoryRecord>) -> Result<usize> {
+        let existing = Self::load_history().await?;
+        let existing_contents: HashSet<String> =
+            existing.iter().map(|r| r.content.clone()).collect();
+        // 已占用 id 集合：现有 id ∪ 本次已为 content-新 incoming 分配的 id。
+        let mut used_ids: HashSet<String> = existing.iter().map(|r| r.id.clone()).collect();
+        let mut seen_new_contents: HashSet<String> = HashSet::new();
+
+        let incoming: Vec<HistoryRecord> = incoming
+            .into_iter()
+            .map(|mut r| {
+                let is_new =
+                    !existing_contents.contains(&r.content) && !seen_new_contents.contains(&r.content);
+                if is_new {
+                    seen_new_contents.insert(r.content.clone());
+                    if used_ids.contains(&r.id) {
+                        r.id = HistoryRecord::generate_id(chrono::Utc::now().timestamp_millis());
+                    }
+                    used_ids.insert(r.id.clone());
+                }
+                r
+            })
+            .collect();
+
+        let (merged, added) = merge_history_lists(existing, incoming);
+        Storage::set(Self::STORAGE_KEY, &merged)
+            .map_err(|e| anyhow::anyhow!("合并历史记录失败: {:?}", e))?;
+        Ok(added)
+    }
+
 }
 
 /// 在记录列表中就地更新 id 匹配项的 `formatted_content`，返回是否命中。
@@ -373,6 +407,111 @@ pub fn set_record_formatted(records: &mut [HistoryRecord], record_id: &str, form
     } else {
         false
     }
+}
+
+/// 就地把记录列表裁剪到不超过 `max` 条（FIFO，书签永不淘汰）。纯函数（无 Storage / async）。
+///
+/// 语义与 `save_record` 原内联逻辑一致：书签记录全部保留；剩余名额（`max - 书签数`，下溢取 0）
+/// 按列表顺序（约定 front=最新）填充非书签记录，超出的最旧非书签项被丢弃。
+/// 若书签数本身 ≥ max，则全部书签保留、所有非书签丢弃，结果长度可大于 max（书签优先于上限）。
+/// `merge_records` 合并路径**不**调用本函数 → 合并阶段无界。
+pub fn cap_records(records: &mut Vec<HistoryRecord>, max: usize) {
+    if records.len() <= max {
+        return;
+    }
+    let bookmarked_count = records.iter().filter(|r| r.bookmarked).count();
+    let mut budget = max.saturating_sub(bookmarked_count);
+    records.retain(|r| {
+        if r.bookmarked {
+            true
+        } else if budget > 0 {
+            budget -= 1;
+            true
+        } else {
+            false
+        }
+    });
+}
+
+/// 把 `incoming` 历史记录合并进 `existing`，按 `content` 去重，返回 `(合并表, 新增条数)`。纯函数、**无上限**。
+///
+/// 规则（与 `save_record` 的去重/书签语义一致，当前会话优先）：
+/// - 去重键 = `content`；existing 在前，content-新的 incoming 追加在后（保持各自相对顺序）。
+/// - content 命中（existing 内或先前已并入的 incoming）：**保留先到者的 id/name/created_at/formatted_content**
+///   （existing 优先，保护 `current_record_id` 指向），`bookmarked` 取并集（`既有 || incoming`）。
+/// - content-新：原样追加，计入新增数。incoming 内部的同 content 重复亦折叠为一条（书签并集）。
+///
+/// 不施加任何上限——导入即时全保留；后续正常保存时再由 `cap_records`（高水位）做有界轮换。
+///
+/// 仅桌面/原生（合并仅服务于桌面导入；`cfg(not(wasm32))` 排除 wasm 死代码、保留原生单测可见）。
+#[cfg(not(target_arch = "wasm32"))]
+pub fn merge_history_lists(
+    existing: Vec<HistoryRecord>,
+    incoming: Vec<HistoryRecord>,
+) -> (Vec<HistoryRecord>, usize) {
+    let mut merged = existing;
+    // content -> merged 中的下标，用于 O(1) 命中判定 + 书签并集回写。
+    let mut index: std::collections::HashMap<String, usize> = merged
+        .iter()
+        .enumerate()
+        .map(|(i, r)| (r.content.clone(), i))
+        .collect();
+
+    let mut added = 0usize;
+    for inc in incoming {
+        if let Some(&i) = index.get(&inc.content) {
+            // 命中：保留先到者身份，仅并集书签标志。
+            merged[i].bookmarked = merged[i].bookmarked || inc.bookmarked;
+        } else {
+            index.insert(inc.content.clone(), merged.len());
+            merged.push(inc);
+            added += 1;
+        }
+    }
+    (merged, added)
+}
+
+/// 把历史记录导出为 zip 字节流（仅桌面）：`history.json`（美化的 `Vec<HistoryRecord>`）+
+/// `manifest.json`（格式版本 / 应用版本 / 导出时刻 / 条数，导入仅参考）。均用 `Stored`（免压缩）。
+#[cfg(not(target_arch = "wasm32"))]
+pub fn export_zip(records: &[HistoryRecord]) -> Result<Vec<u8>> {
+    use std::io::{Cursor, Write};
+    use zip::write::SimpleFileOptions;
+    use zip::{CompressionMethod, ZipWriter};
+
+    let history_json = serde_json::to_string_pretty(records)?;
+    let manifest = serde_json::json!({
+        "format_version": 1,
+        "app_version": env!("CARGO_PKG_VERSION"),
+        "exported_at": chrono::Local::now().to_rfc3339(),
+        "count": records.len(),
+    });
+    let manifest_json = serde_json::to_string_pretty(&manifest)?;
+
+    let mut zip = ZipWriter::new(Cursor::new(Vec::new()));
+    let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+    zip.start_file("manifest.json", options)?;
+    zip.write_all(manifest_json.as_bytes())?;
+    zip.start_file("history.json", options)?;
+    zip.write_all(history_json.as_bytes())?;
+    let cursor = zip.finish()?;
+    Ok(cursor.into_inner())
+}
+
+/// 从 zip 字节流解析出历史记录（仅桌面）：读取 `history.json` 反序列化为 `Vec<HistoryRecord>`。
+/// `HistoryRecord.bookmarked` 的 `#[serde(default)]` 兜旧档（无该字段时回退 false）。
+/// 损坏 / 非 zip / 缺 `history.json` / 非法 JSON → `Err`（调用方据此提示「无效归档」、不写任何状态）。
+#[cfg(not(target_arch = "wasm32"))]
+pub fn parse_zip(bytes: &[u8]) -> Result<Vec<HistoryRecord>> {
+    use std::io::{Cursor, Read};
+    use zip::ZipArchive;
+
+    let mut archive = ZipArchive::new(Cursor::new(bytes))?;
+    let mut file = archive.by_name("history.json")?;
+    let mut s = String::new();
+    file.read_to_string(&mut s)?;
+    let records: Vec<HistoryRecord> = serde_json::from_str(&s)?;
+    Ok(records)
 }
 
 /// 配置服务

@@ -28,6 +28,10 @@ btn:
   import: Import
   delete_title: Delete
   close_title: Close
+  export_zip: Export
+  export_zip_title: Export history as a .zip archive
+  import_zip: Import .zip
+  import_zip_title: Import history from a .zip (merged into current session)
 
 # 校验 / 处理错误（service 给结构化 kind，在此本地化）
 err:
@@ -155,6 +159,10 @@ sidebar:
 # 轻量 Toast 反馈
 toast:
   imported: ✓ Imported
+  exported: ✓ History exported
+  merged: "✓ Merged %{n} record(s)"
+  export_failed: Export failed
+  import_invalid: Invalid archive
 
 # 功能介绍（About）弹窗 —— 5 个差异化卖点。文案为初稿，待按产品口吻定稿。
 about:

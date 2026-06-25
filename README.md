@@ -119,10 +119,15 @@ The static Web artifacts are placed in `target/dx/easy-json-view/release/web/pub
 
 History and config are persisted per platform via the `src/platform/` shim — no server, nothing uploaded remotely:
 
-- **Desktop**: a single JSON file `~/.config/easy-json-view/store.json` containing the two keys `easy_json_view_history` and `easy_json_view_config`.
+- **Desktop**: a single JSON file `store.json` under your OS config directory (location varies via `dirs::config_dir()`), containing the two keys `easy_json_view_history` and `easy_json_view_config`:
+  - **Linux**: `~/.config/easy-json-view/store.json`
+  - **macOS**: `~/Library/Application Support/easy-json-view/store.json`
+  - **Windows**: `%APPDATA%\easy-json-view\store.json` (Roaming)
 - **Web**: browser `localStorage`, with the same two keys.
-- `easy_json_view_history` — the history list (deduplicated by content, capped at 100; the default name is the first 7 chars of the content's SHA1 short hash, with a creation timestamp; bookmarks are never evicted).
-- `easy_json_view_config` — formatting options (indentation + sort keys) and UI settings (theme / font size / auto-format).
+- `easy_json_view_history` — the history list (deduplicated by content; the default name is the first 7 chars of the content's SHA1 short hash, with a creation timestamp; bookmarks are never evicted). Normal saves are capped at 100 records; **importing a `.zip` can exceed this** — the imported batch is kept in full, and that larger size becomes the new high-water mark for subsequent FIFO rotation.
+- `easy_json_view_config` — formatting options (indentation + sort keys) and UI settings (theme / font size / auto-format / language / density / line numbers).
+
+**Sync across devices.** Since desktop history is a single plain `store.json`, you can version/sync it with git — run `git init` in that config directory (or include `store.json` in an already-synced repo). Alternatively, use the desktop **Export / Import (.zip)** buttons in the history sidebar to move history between devices (import merges into the current session, deduplicated by content).
 
 ## 🧪 Testing & Benchmarks
 

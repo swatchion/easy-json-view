@@ -5,8 +5,12 @@
       <stop offset="1" stop-color="#1f53e0"/>
     </linearGradient>
   </defs>
-  <rect width="48" height="48" rx="11" fill="url(#g)"/>
-  <path d="M20 14C17 14 17 18 17 21C17 23.5 15 24 13.5 24C15 24 17 24.5 17 27C17 30 17 34 20 34" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M28 14C31 14 31 18 31 21C31 23.5 33 24 34.5 24C33 24 31 24.5 31 27C31 30 31 34 28 34" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <circle cx="24" cy="24" r="3.4" fill="#22d3ee"/>
+  <!-- 整体缩到 80% 居中：translate(4.8,4.8)=画布 48 的 10% 边距；scale(0.8) → 蓝底 48→38.4 居中，
+       四周 10% 透明留白（画布本无外层背景 → 透明底自动成立）。glyph/节点按比例同缩、仍居中。 -->
+  <g transform="translate(4.8 4.8) scale(0.8)">
+    <rect width="48" height="48" rx="11" fill="url(#g)"/>
+    <path d="M20 14C17 14 17 18 17 21C17 23.5 15 24 13.5 24C15 24 17 24.5 17 27C17 30 17 34 20 34" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M28 14C31 14 31 18 31 21C31 23.5 33 24 34.5 24C33 24 31 24.5 31 27C31 30 31 34 28 34" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="24" cy="24" r="3.4" fill="#22d3ee"/>
+  </g>
 </svg>

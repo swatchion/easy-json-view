@@ -5,10 +5,163 @@ mod tests {
     use crate::services::set_record_formatted;
     use crate::services::{collect_search_expansions, find_matches};
     use crate::services::{AppConfig, UiSettings};
+    use crate::services::{merge_history_lists, cap_records};
     use std::collections::HashSet;
 
     fn paths(items: &[&str]) -> HashSet<String> {
         items.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// 直接构造 HistoryRecord（字段全 pub），用于合并/上限纯逻辑测试。
+    fn mkrec(id: &str, content: &str, bookmarked: bool) -> HistoryRecord {
+        HistoryRecord {
+            id: id.to_string(),
+            name: format!("name-{id}"),
+            content: content.to_string(),
+            formatted_content: format!("fmt-{content}"),
+            created_at: format!("2020-01-01T00:00:0{id}Z"),
+            bookmarked,
+        }
+    }
+
+    // ========== merge_history_lists（纯逻辑：导入合并，无上限） ==========
+
+    #[test]
+    fn test_merge_appends_new_incoming_after_existing() {
+        // existing=[A,B]；incoming=[C(新), A(重复)] → 结果 [A,B,C]，新增 1
+        let existing = vec![mkrec("1", "A", false), mkrec("2", "B", false)];
+        let incoming = vec![mkrec("9", "C", false), mkrec("8", "A", false)];
+        let (merged, added) = merge_history_lists(existing, incoming);
+        let contents: Vec<&str> = merged.iter().map(|r| r.content.as_str()).collect();
+        assert_eq!(contents, vec!["A", "B", "C"], "existing 在前，content-新者追加在后");
+        assert_eq!(added, 1, "仅 C 为新增");
+    }
+
+    #[test]
+    fn test_merge_keeps_existing_identity_on_content_collision() {
+        // content 命中时保留 existing 的 id/created_at/name（当前会话优先，保护 current_record_id）
+        let existing = vec![mkrec("e1", "X", false)];
+        let mut incoming_dup = mkrec("i1", "X", false);
+        incoming_dup.name = "incoming-name".to_string();
+        incoming_dup.created_at = "2099-12-31T00:00:00Z".to_string();
+        let (merged, added) = merge_history_lists(existing, vec![incoming_dup]);
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].id, "e1", "保留 existing id");
+        assert_eq!(merged[0].name, "name-e1", "保留 existing name");
+        assert_eq!(merged[0].created_at, "2020-01-01T00:00:0e1Z", "保留 existing created_at");
+        assert_eq!(added, 0, "content 命中不计新增");
+    }
+
+    #[test]
+    fn test_merge_bookmark_is_union_both_directions() {
+        // existing 有书签、incoming 无 → 保持 true
+        let (m1, _) = merge_history_lists(
+            vec![mkrec("1", "X", true)],
+            vec![mkrec("2", "X", false)],
+        );
+        assert!(m1[0].bookmarked, "existing 书签应保留");
+
+        // existing 无书签、incoming 有 → 翻转为 true（并集）
+        let (m2, _) = merge_history_lists(
+            vec![mkrec("1", "X", false)],
+            vec![mkrec("2", "X", true)],
+        );
+        assert!(m2[0].bookmarked, "incoming 书签应并入");
+    }
+
+    #[test]
+    fn test_merge_has_no_cap() {
+        // 导入不受 100 上限约束：150 条全新 incoming 应全部保留
+        let incoming: Vec<HistoryRecord> = (0..150)
+            .map(|i| mkrec(&format!("{i}"), &format!("C{i}"), false))
+            .collect();
+        let (merged, added) = merge_history_lists(Vec::new(), incoming);
+        assert_eq!(merged.len(), 150, "合并阶段无上限，全部保留");
+        assert_eq!(added, 150);
+    }
+
+    #[test]
+    fn test_merge_collapses_incoming_internal_duplicates() {
+        // incoming 内部同 content 重复 → 折叠为一条，书签取并集，新增计 1
+        let incoming = vec![mkrec("1", "A", false), mkrec("2", "A", true)];
+        let (merged, added) = merge_history_lists(Vec::new(), incoming);
+        assert_eq!(merged.len(), 1, "incoming 内部重复折叠为一条");
+        assert!(merged[0].bookmarked, "并集后应为书签");
+        assert_eq!(added, 1);
+    }
+
+    // ========== cap_records（纯逻辑：FIFO 上限，书签永不淘汰） ==========
+
+    #[test]
+    fn test_cap_records_noop_when_within_limit() {
+        let mut records = vec![mkrec("1", "A", false), mkrec("2", "B", false)];
+        let before = records.clone();
+        cap_records(&mut records, 5);
+        assert_eq!(records, before, "未超上限应原样不动");
+    }
+
+    #[test]
+    fn test_cap_records_keeps_newest_non_bookmarked() {
+        // 5 条非书签，cap 到 3 → 保留最前（最新）3 条
+        let mut records: Vec<HistoryRecord> = (0..5)
+            .map(|i| mkrec(&format!("{i}"), &format!("C{i}"), false))
+            .collect();
+        cap_records(&mut records, 3);
+        let ids: Vec<&str> = records.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, vec!["0", "1", "2"], "保留最前 3 条，淘汰最旧");
+    }
+
+    #[test]
+    fn test_cap_records_bookmark_never_evicted_and_order() {
+        // [非, 书签, 非, 非]，cap 到 2：预算=2-1=1 → 保留第 1 个非书签 + 书签，丢弃其余非书签
+        let mut records = vec![
+            mkrec("0", "C0", false),
+            mkrec("1", "C1", true),
+            mkrec("2", "C2", false),
+            mkrec("3", "C3", false),
+        ];
+        cap_records(&mut records, 2);
+        let ids: Vec<&str> = records.iter().map(|r| r.id.as_str()).collect();
+        assert_eq!(ids, vec!["0", "1"], "保留最新非书签 + 书签");
+    }
+
+    #[test]
+    fn test_cap_records_all_bookmarks_may_exceed_max() {
+        // 书签数本身超过 max：全部书签保留，结果长度可大于 max（书签永不淘汰）
+        let mut records: Vec<HistoryRecord> = (0..4)
+            .map(|i| mkrec(&format!("{i}"), &format!("C{i}"), true))
+            .collect();
+        cap_records(&mut records, 2);
+        assert_eq!(records.len(), 4, "书签永不淘汰，可超过 max");
+        assert!(records.iter().all(|r| r.bookmarked));
+    }
+
+    // ========== export_zip / parse_zip 往返（仅桌面 cfg，逻辑测试可跑） ==========
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn test_zip_round_trip_preserves_records() {
+        use crate::services::{export_zip, parse_zip};
+        let recs = vec![mkrec("1", "A", false), mkrec("2", "B", true)];
+        let bytes = export_zip(&recs).expect("export 应成功");
+        let parsed = parse_zip(&bytes).expect("parse 应成功");
+        assert_eq!(parsed, recs, "往返后记录应完全一致（含书签）");
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn test_zip_round_trip_empty_history() {
+        use crate::services::{export_zip, parse_zip};
+        let bytes = export_zip(&[]).expect("空历史导出应成功");
+        let parsed = parse_zip(&bytes).expect("空历史解析应成功");
+        assert!(parsed.is_empty(), "空历史往返应为空");
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn test_parse_zip_rejects_corrupt_archive() {
+        use crate::services::parse_zip;
+        assert!(parse_zip(b"this is not a zip file").is_err(), "损坏归档应返回 Err");
     }
 
     #[test]
