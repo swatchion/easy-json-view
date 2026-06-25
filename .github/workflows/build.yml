@@ -98,3 +98,52 @@ jobs:
           name: easy-json-view-${{ matrix.platform }}
           path: dist/*
           if-no-files-found: error
+
+  # tag 触发时的收尾 job：把三平台 artifact 聚合发布为一个 GitHub Release。
+  # 与 bundle 解耦——bundle 只产物（顶层最小权限 contents:read），发布权限收敛在此 job。
+  #   - needs: bundle  → 三平台全部成功才跑；任一失败则整个 release 跳过，不出半套包
+  #   - if: tag        → 仅 push v* tag 时发布；workflow_dispatch（无 tag）自动跳过
+  release:
+    name: publish release
+    needs: bundle
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    # job 级 permissions 是「替换」非「合并」：须显式给齐发布所需两项。
+    permissions:
+      contents: write   # 创建 release + 上传资产
+      actions: read     # 下载本次 run 的 artifact
+    steps:
+      # 不指定 name → 下载本 run 全部 artifact，各自落到 dist/<artifact-name>/...
+      # download@v6 与上方 upload@v6 同代，artifact 后端兼容。
+      - name: Download all installers
+        uses: actions/download-artifact@v6
+        with:
+          path: dist
+
+      # gh 是 runner 预装的第一方 CLI，免引第三方 action。
+      # generate-notes 自动按上一个 tag 起列变更，再附加固定的「下载说明」。
+      # 幂等：create 失败（同 tag 重跑、release 已存在）即跳过，再用 upload --clobber 覆盖资产。
+      # dist/*/* 匹配「一层子目录下的全部安装包」（含 linux 的 deb + AppImage 两份）。
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="${GITHUB_REF_NAME}" --jq .body > notes.md
+          cat >> notes.md <<'EOF'
+
+          ## 下载说明 / Downloads
+
+          - **Linux · AppImage** — 自带 WebView，`chmod +x` 后直接运行
+          - **Linux · deb** — 依赖系统 `webkit2gtk-4.1`，体积小
+          - **macOS · dmg** — 未签名，首次打开右键「打开」绕过 Gatekeeper；Apple Silicon 经 Rosetta 运行
+          - **Windows · exe** — 未签名；若缺 WebView2 运行时，请先装 Evergreen Runtime
+          EOF
+          gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Easy Json View ${GITHUB_REF_NAME}" \
+            --notes-file notes.md \
+            --verify-tag || true
+          gh release upload "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber dist/*/*
