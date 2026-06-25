@@ -2,6 +2,7 @@
 mod tests {
     use crate::services::{JsonService, ValidationResult, ValidationErrorKind, FormatOptions, HistoryRecord};
     use crate::services::{build_tree_rows, collect_container_paths, path_to_expr, node_copy_text};
+    use crate::services::set_record_formatted;
     use crate::services::{collect_search_expansions, find_matches};
     use crate::services::{AppConfig, UiSettings};
     use std::collections::HashSet;
@@ -518,6 +519,51 @@ mod tests {
         let r2 = HistoryRecord::new(content.clone(), content.clone());
         assert_ne!(r1.id, r2.id, "相同内容也应生成不同的 id");
         assert_eq!(r1.name, r2.name, "相同内容名称（hash）应一致");
+    }
+
+    #[test]
+    fn test_set_record_formatted_updates_only_target_field() {
+        // set_record_formatted 为 update_record_formatted 的纯逻辑内核：
+        // 仅改命中 id 的 formatted_content，其它字段与其它记录均不动。
+        let mut records = vec![
+            HistoryRecord::new(r#"{"a":1}"#.to_string(), "OLD_A".to_string()),
+            HistoryRecord::new(r#"{"b":2}"#.to_string(), "OLD_B".to_string()),
+        ];
+        let r0 = records[0].clone();
+        let r1_before = records[1].clone();
+
+        let hit = set_record_formatted(&mut records, &r0.id, "NEW_A".to_string());
+        assert!(hit, "命中已存 id 应返回 true");
+
+        // 目标项：仅 formatted_content 变化
+        assert_eq!(records[0].formatted_content, "NEW_A");
+        assert_eq!(records[0].id, r0.id);
+        assert_eq!(records[0].name, r0.name);
+        assert_eq!(records[0].content, r0.content);
+        assert_eq!(records[0].created_at, r0.created_at);
+        assert_eq!(records[0].bookmarked, r0.bookmarked);
+
+        // 其它项：完全不变
+        assert_eq!(records[1], r1_before);
+
+        // 未命中 id：返回 false 且整表不变
+        let before = records.clone();
+        assert!(!set_record_formatted(&mut records, "no-such-id", "X".to_string()));
+        assert_eq!(records, before);
+    }
+
+    #[test]
+    fn test_trimmed_inputs_share_dedup_key() {
+        // 去重/匹配键 = record.content。trim 后首尾空白不同的输入应得到相等 content，
+        // 故 app 层 history_records.find(|r| r.content == input) 能命中并复用原记录。
+        let a = "  {\"a\":1}\n".trim().to_string();
+        let b = "\n\t{\"a\":1}  ".trim().to_string();
+        assert_eq!(a, b, "trim 后两输入应字节相等");
+
+        let ra = HistoryRecord::new(a, "x".to_string());
+        let rb = HistoryRecord::new(b, "y".to_string());
+        assert_eq!(ra.content, rb.content, "content 相等 → 匹配/去重命中");
+        assert_eq!(ra.name, rb.name, "内容相同 → 短 hash 名一致");
     }
 
     #[test]

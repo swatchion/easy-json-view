@@ -137,12 +137,14 @@ cargo test test_json_formatting --no-default-features
 cargo bench --no-default-features
 ```
 
+## ⚠️ Known limitations (Linux)
+
+- **Window control buttons (Wayland)**: under a Wayland session the window's minimize / maximize / close buttons follow the GTK default (right side) and do **not** follow a GNOME global "macOS-style top-left" layout — a known limitation of tao's bare GTK window on Wayland. If you prefer the left-side layout (or otherwise want the buttons to honor your GNOME setting), launch via XWayland: `GDK_BACKEND=x11 ./easy-json-view` (trade-off: XWayland may look slightly blurry on HiDPI displays).
+
 ## 🗺️ Roadmap
 
-- Package the desktop app into an installable artifact (AppImage / `dx bundle`) — not included in this dual-target rework, left for later
 - JSON string escape / unescape
-- Internationalization
-- A flicker-free desktop startup theme (the first frame may currently show a very brief light flash)
+- A fully flicker-free dark startup: light-mode startup is now flush (the giant unstyled-icon flash is fixed and the first frame uses the app's light background); dark-mode users may still see a brief light first frame, since the native first-frame background color cannot be theme-aware
 
 ## 📄 License
 

@@ -49,8 +49,16 @@ fn main() {
         .with_window_icon(icon)
         .with_resizable(true);
 
+    // 首帧底色：webview 在 assets/tailwind.css 加载前是默认白底，会有一瞬白闪。
+    // 设为应用浅色底 #e9edf3（即 tailwind app / --app-bg 浅色令牌、input.css body 背景），
+    // 让首帧即与（默认浅色主题的）应用同色而非纯白。深色用户仍会有一瞬浅底——
+    // 该底色为窗口创建时的静态值，无法随主题切换，浅色是默认主题故取浅色。
     dioxus::LaunchBuilder::desktop()
-        .with_cfg(Config::new().with_window(window))
+        .with_cfg(
+            Config::new()
+                .with_window(window)
+                .with_background_color((233, 237, 243, 255)),
+        )
         .launch(app::App);
 }
 

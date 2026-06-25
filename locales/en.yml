@@ -172,3 +172,4 @@ about:
   light_title: Featherweight
   light_desc: Built in Rust for a tiny memory footprint and instant formatting.
   tech_stack: Proudly built with Rust + Dioxus
+  source: View source on GitHub

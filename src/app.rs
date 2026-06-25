@@ -215,6 +215,30 @@ fn download_text(filename: &str, text: &str) {
     });
 }
 
+/// 在外部打开 URL（About 弹窗的 GitHub 链接）。两端分叉但保持签名，同 copy_to_clipboard/download_text。
+/// Web：新标签打开。调用点在 onclick（用户手势）内，不触发弹窗拦截。
+#[cfg(target_arch = "wasm32")]
+fn open_url(url: &str) {
+    if let Some(win) = web_sys::window() {
+        // 带 noopener,noreferrer：window.open 不像 <a target=_blank> 那样自动断开 opener，
+        // 否则新标签可经 window.opener 反向劫持本应用标签（reverse-tabnabbing）。
+        let _ = win.open_with_url_and_target_and_features(url, "_blank", "noopener,noreferrer");
+    }
+}
+
+/// 桌面：交给系统默认浏览器（xdg-open/open/start）。绝不能在 webview 内导航 <a href>——
+/// 那会把应用页面替换成目标网页。open::that 阻塞到启动器返回，故丢到独立线程避免卡住 UI 事件循环。
+#[cfg(not(target_arch = "wasm32"))]
+fn open_url(url: &str) {
+    let url = url.to_string();
+    std::thread::spawn(move || {
+        let _ = open::that(url);
+    });
+}
+
+/// 项目源码仓库地址（About 弹窗「查看源码」链接）。
+const GITHUB_URL: &str = "https://github.com/swatchion/easy-json-view";
+
 /// 支持的界面语言：(locale code, 该语言自称 autonym)。加语言 = 加一行 + 一个 locales/<code>.yml。
 /// 语言名用自称（English / 中文），按惯例不翻译——不入 YAML，故与「键集对称」检查无关。
 const LANGUAGES: &[(&str, &str)] = &[("en", "English"), ("zh-CN", "中文")];
@@ -228,6 +252,11 @@ fn lucide_cls(cls: &str, paths: &[&'static str]) -> Element {
     rsx! {
         svg {
             class: "{cls}",
+            // 回退尺寸：CSS（assets/tailwind.css）加载前，未样式化 SVG 会按内禀 300×150 渲染
+            // → 首屏闪现巨型图标（FOUC）。给 width/height=16 作回退，与 24×24 viewBox 等比缩放为 ~16px。
+            // tailwind.css 加载后，class 里的 w-4 h-4 等工具类按 CSS 优先级覆盖该属性 → 最终尺寸不变。
+            width: "16",
+            height: "16",
             view_box: "0 0 24 24",
             fill: "none",
             stroke: "currentColor",
@@ -393,6 +422,9 @@ pub struct AppState {
     pub history_records: Vec<HistoryRecord>,
     /// 搜索关键词
     pub search_query: String,
+    /// 当前主面板显示结果所对应的历史记录 id（用于侧栏高亮）。
+    /// 格式化/选择历史时写入；手动改输入或清空时置 None（高亮消失）。
+    pub current_record_id: Option<String>,
 }
 
 impl Default for AppState {
@@ -405,6 +437,7 @@ impl Default for AppState {
             format_options: FormatOptions::default(),
             history_records: Vec::new(),
             search_query: String::new(),
+            current_record_id: None,
         }
     }
 }
@@ -491,10 +524,12 @@ pub fn App() -> Element {
 
     // 处理函数：minify=false 为格式化（美化），minify=true 为压缩为单行
     let mut process = move |minify: bool| {
-        let input = app_state.read().input_content.clone();
+        // trim 单一收口：处理与存储均用 trim 后的值（textarea 内容不变，用户仍见原输入）。
+        // 这样首尾空白不同但 JSON 相同的输入会命中同一条历史记录（去重键 = trim 后 content）。
+        let input = app_state.read().input_content.trim().to_string();
         let options = app_state.read().format_options.clone();
 
-        if input.trim().is_empty() {
+        if input.is_empty() {
             app_state.write().error_message = Some(t!("err.input_required").to_string());
             return;
         }
@@ -520,10 +555,34 @@ pub fn App() -> Element {
                     };
                     match result {
                         Ok(output) => {
-                            let record = HistoryRecord::new(input.clone(), output.clone());
-                            if HistoryService::save_record(&record).await.is_ok() {
-                                if let Ok(records) = HistoryService::load_history().await {
-                                    app_state.write().history_records = records;
+                            // 去重保留：先在内存历史中按 trim 后 content 查重。提取 owned 元组后
+                            // 立即释放 read 守卫（不跨 .await 持有 RefCell 借用，避免 panic）。
+                            let existing = app_state.read().history_records.iter()
+                                .find(|r| r.content == input)
+                                .map(|r| (r.id.clone(), r.formatted_content.clone()));
+                            match existing {
+                                // 命中已有记录：仅高亮它，不新增、不置顶、不动 id/时间/书签。
+                                // 若本次缩进选项变化致输出不同，则就地更新其 formatted_content（内存 + 持久化）。
+                                Some((id, old_formatted)) => {
+                                    if old_formatted != output
+                                        && HistoryService::update_record_formatted(&id, output.clone()).await.is_ok()
+                                    {
+                                        if let Some(r) = app_state.write().history_records.iter_mut().find(|r| r.id == id) {
+                                            r.formatted_content = output.clone();
+                                        }
+                                    }
+                                    app_state.write().current_record_id = Some(id);
+                                }
+                                // 未命中：新建记录、保存、重载，并高亮新记录。
+                                None => {
+                                    let record = HistoryRecord::new(input.clone(), output.clone());
+                                    let new_id = record.id.clone();
+                                    if HistoryService::save_record(&record).await.is_ok() {
+                                        if let Ok(records) = HistoryService::load_history().await {
+                                            app_state.write().history_records = records;
+                                        }
+                                    }
+                                    app_state.write().current_record_id = Some(new_id);
                                 }
                             }
                             stats.set(JsonService::get_stats(&input).ok());
@@ -568,6 +627,7 @@ pub fn App() -> Element {
         state.input_content = String::new();
         state.output_content = String::new();
         state.error_message = None;
+        state.current_record_id = None; // 清空 → 无「当前」记录，高亮消失
         drop(state);
         stats.set(None);
         output_query.set(String::new());
@@ -616,6 +676,8 @@ pub fn App() -> Element {
     // 历史记录选择处理
     let mut handle_history_select = move |record: HistoryRecord| {
         stats.set(JsonService::get_stats(&record.content).ok());
+        // 加载历史记录即「当前」记录 → 高亮该行（取 id 须在下面移动 content 之前）
+        app_state.write().current_record_id = Some(record.id.clone());
         app_state.write().input_content = record.content;
         app_state.write().output_content = record.formatted_content;
         current_match.set(0);
@@ -700,6 +762,9 @@ pub fn App() -> Element {
         list
     };
 
+    // 当前主面板结果所对应的历史记录 id（侧栏两处历史行据此高亮；在此读一次，订阅该字段）
+    let current_id = app_state.read().current_record_id.clone();
+
     // 输入区状态栏文案（仅字符数；行数指示按用户要求移除）
     let input_stats = t!("input.stats",
         chars = app_state.read().input_content.len()
@@ -731,7 +796,9 @@ pub fn App() -> Element {
     // 文本视图行号串：仅在开启且有输出时构建（单个字符串 "1\n2\n…\nN"，gutter 一个 <pre> 元素渲染，
     // DOM 量与行数无关）。关闭时为空串、不渲染 gutter。
     let line_numbers_str = if ui_settings.read().show_line_numbers && output_line_count > 0 {
-        (1..=output_line_count).map(|n| n.to_string()).collect::<Vec<_>>().join("\n")
+        // 按最大行号位数左侧补空格（gutter <pre> 为 whitespace-pre + 等宽字体，前导空格保留并等宽对齐）
+        let w = output_line_count.to_string().len().max(2);
+        (1..=output_line_count).map(|n| format!("{:>w$}", n, w = w)).collect::<Vec<_>>().join("\n")
     } else {
         String::new()
     };
@@ -967,10 +1034,12 @@ pub fn App() -> Element {
                             {
                                 let r = record.clone();
                                 let name = record.name.clone();
+                                // 当前记录 → 复用 .ejv-cur（左强调条 + 底色，浅/深色已在 input.css 定义）
+                                let cur_cls = if current_id.as_deref() == Some(record.id.as_str()) { "ejv-cur" } else { "" };
                                 rsx! {
                                     button {
                                         key: "{record.id}",
-                                        class: "ejv-row w-full px-1 py-1.5 rounded-md text-[10px] font-mono text-muted hover:text-ink truncate text-center",
+                                        class: "ejv-row w-full px-1 py-1.5 rounded-md text-[10px] font-mono text-muted hover:text-ink truncate text-center {cur_cls}",
                                         title: "{name}",
                                         onclick: move |_| handle_history_select(r.clone()),
                                         "{name}"
@@ -1147,11 +1216,19 @@ pub fn App() -> Element {
                                 let record_clone = record.clone();
                                 let record_name = record.name.clone();
                                 let record_id = record.id.clone();
+                                // 当前记录高亮：用条件工具类（border-accent + bg-accentsoft，与 .ejv-cur 同底色），
+                                // 而非 .ejv-cur——卡片自带 bg-panel2，深色 html.dark .bg-panel2{!important} 会压过 .ejv-cur 底色。
+                                // 两串仅在 border/bg 令牌处不同。
+                                let card_cls = if current_id.as_deref() == Some(record_id.as_str()) {
+                                    "group border border-accent bg-accentsoft rounded-xl p-3 transition-colors hover:border-accent hover:bg-field"
+                                } else {
+                                    "group border border-line2 bg-panel2 rounded-xl p-3 transition-colors hover:border-accent hover:bg-field"
+                                };
 
                                 rsx! {
                                     div {
                                         key: "{record_id}",
-                                        class: "group border border-line2 bg-panel2 rounded-xl p-3 transition-colors hover:border-accent hover:bg-field",
+                                        class: card_cls,
 
                                         if editing_record_id.read().as_ref() == Some(&record_id) {
                                             // 编辑模式
@@ -1682,8 +1759,10 @@ pub fn App() -> Element {
                                             let row_state = if row_is_cur { "ejv-cur" } else if is_selected { "ejv-sel" } else { "" };
                                             let close_bracket = if row.value_text == "{" { "}" } else { "]" };
                                             let depth = row.depth.min(40);
-                                            // 行号 gutter 宽度：按可见行数位数定（≥2 位），确保各行右对齐数字列等宽
+                                            // 行号 gutter 宽度：按可见行数位数定（≥2 位）。webkit2gtk 下 min-width/text-right 未真正定宽，
+                                            // 故按最大位数左侧补空格成定长串（配 whitespace-pre + 等宽字体），使各行行号占同样宽度、内容对齐。
                                             let ln_digits = rows.len().to_string().len().max(2);
+                                            let ln_label = format!("{:>w$}", ri + 1, w = ln_digits);
                                             let p_for_caret = row.path.clone();
                                             let p_for_sel = row.path.clone();
                                             // 闭括号行点击 → 选中其容器（剥去 ~c 后缀），使开/闭成对高亮
@@ -1698,7 +1777,7 @@ pub fn App() -> Element {
                                                         class: "ejv-row flex items-start pl-2 pr-2 {row_state}",
                                                         onclick: move |_| selected_path.set(Some(p_for_sel_close.clone())),
                                                         if ui_settings.read().show_line_numbers {
-                                                            span { class: "shrink-0 self-stretch text-right text-muted2 select-none border-r border-line2 pr-2 mr-1", style: "min-width:{ln_digits}ch", "{ri + 1}" }
+                                                            span { class: "shrink-0 self-stretch text-right text-muted2 select-none border-r border-line2 pr-2 mr-1 font-mono tabular-nums whitespace-pre", style: "min-width:{ln_digits}ch", "{ln_label}" }
                                                         }
                                                         for _gi in 0..depth {
                                                             span { key: "{_gi}", class: "shrink-0 self-stretch border-l border-guide", style: "width:{tree_indent_px}px;transform:translateX(8px)" }
@@ -1716,7 +1795,7 @@ pub fn App() -> Element {
                                                     onclick: move |_| selected_path.set(Some(p_for_sel.clone())),
                                                     // 行号 gutter（开启时）：右对齐、与文本视图同一开关
                                                     if ui_settings.read().show_line_numbers {
-                                                        span { class: "shrink-0 self-stretch text-right text-muted2 select-none border-r border-line2 pr-2 mr-1", style: "min-width:{ln_digits}ch", "{ri + 1}" }
+                                                        span { class: "shrink-0 self-stretch text-right text-muted2 select-none border-r border-line2 pr-2 mr-1 font-mono tabular-nums whitespace-pre", style: "min-width:{ln_digits}ch", "{ln_label}" }
                                                     }
                                                     // 缩进引导线：每层一个定宽 border-l 占位，堆叠成连续竖线
                                                     for _gi in 0..depth {
@@ -1850,7 +1929,9 @@ pub fn App() -> Element {
                                             let row_state = if row_is_cur { "ejv-cur" } else if is_selected { "ejv-sel" } else { "" };
                                             let depth = row.depth.min(40);
                                             let indent_ch = depth * indent_size;
+                                            // 行号按最大位数左侧补空格成定长串（配 whitespace-pre + 等宽字体定宽对齐，修 webkit2gtk 错位）
                                             let ln_digits = rows.len().to_string().len().max(2);
+                                            let ln_label = format!("{:>w$}", ri + 1, w = ln_digits);
                                             let sel_target = if row.is_close { row.path.strip_suffix("~c").unwrap_or(&row.path).to_string() } else { row.path.clone() };
                                             let p_for_val = row.path.clone();
                                             let p_for_path = row.path.clone();
@@ -1860,7 +1941,7 @@ pub fn App() -> Element {
                                                     class: "ejv-row group flex items-start px-2 {row_state}",
                                                     onclick: move |_| selected_path.set(Some(sel_target.clone())),
                                                     if ui_settings.read().show_line_numbers {
-                                                        span { class: "shrink-0 self-stretch text-right text-muted2 select-none border-r border-line2 pr-2 mr-2", style: "min-width:{ln_digits}ch", "{ri + 1}" }
+                                                        span { class: "shrink-0 self-stretch text-right text-muted2 select-none border-r border-line2 pr-2 mr-2 font-mono tabular-nums whitespace-pre", style: "min-width:{ln_digits}ch", "{ln_label}" }
                                                     }
                                                     // 缩进占位：depth × 缩进大小 个字符宽，与格式化文本对齐
                                                     span { class: "shrink-0", style: "width:{indent_ch}ch" }
@@ -1957,7 +2038,7 @@ pub fn App() -> Element {
                                         class: "flex min-w-min",
                                         if ui_settings.read().show_line_numbers {
                                             pre {
-                                                class: "shrink-0 sticky left-0 z-10 text-right select-none text-muted2 bg-panel border-r border-line2 whitespace-pre pl-3 pr-2 py-4",
+                                                class: "shrink-0 sticky left-0 z-10 text-right select-none text-muted2 bg-panel border-r border-line2 whitespace-pre font-mono tabular-nums pl-3 pr-2 py-4",
                                                 style: "{code_font} line-height:{code_lh}; margin:0;",
                                                 "{line_numbers_str}"
                                             }
@@ -2127,7 +2208,11 @@ pub fn App() -> Element {
                                 value: app_state.read().input_content.clone(),
                                 spellcheck: false,
                                 oninput: move |event| {
-                                    app_state.write().input_content = event.value();
+                                    {
+                                        let mut s = app_state.write();
+                                        s.input_content = event.value();
+                                        s.current_record_id = None; // 手动改输入 → 高亮消失
+                                    }
                                     if ui_settings.read().auto_format {
                                         *autofmt_seq.write() += 1;
                                         let seq = *autofmt_seq.read();
@@ -2224,12 +2309,21 @@ pub fn App() -> Element {
                                 }
                             }
                         }
-                        // 技术栈署名：与功能列表用上边框分隔，居中弱化呈现。
+                        // 技术栈署名 + 源码仓库链接：与功能列表用上边框分隔，居中弱化呈现。
                         div {
                             class: "mt-5 pt-4 border-t border-line text-center",
                             p {
                                 class: "text-xs text-muted",
                                 {t!("about.tech_stack").to_string()}
+                            }
+                            // GitHub 源码链接。用 button 而非 <a href>：桌面 webview 内导航 href 会替换掉
+                            // 应用页面，故走 open_url（桌面交系统浏览器 / Web 新标签）。title 悬停显示真实地址。
+                            button {
+                                class: "mt-3 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline rounded focus-visible:ring-2 focus-visible:ring-accent",
+                                title: GITHUB_URL,
+                                onclick: move |_| open_url(GITHUB_URL),
+                                span { {t!("about.source").to_string()} }
+                                span { "aria-hidden": "true", "↗" }
                             }
                         }
                     }

@@ -158,3 +158,4 @@ about:
   light_title: 极致轻量
   light_desc: 以 Rust 构建，内存占用极低，格式化即时响应。
   tech_stack: 由 Rust + Dioxus 倾力打造
+  source: 在 GitHub 查看源码

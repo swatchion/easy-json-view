@@ -27,9 +27,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # linux 一次产两包（appimage + deb），不用单一 pkg；下方 Bundle 步骤按平台分叉。
           - os: ubuntu-latest
             platform: linux
-            pkg: appimage
           # macos-13（最后的 Intel 镜像）已于 2025-12 退役；改用 macos-15-intel
           # ——Actions 最后的 x86_64 镜像（提供至 2027-08）。单 Intel 产物覆盖
           # Intel 原生 + Apple Silicon（经 Rosetta），配合下方 deployment target 兼容 macOS 13+。
@@ -77,7 +77,16 @@ jobs:
       # 样式 assets/tailwind.css 已入库，无需在 CI 重新生成（仅当改了 RSX 类名/input.css 时才须本地重生成并提交）。
       # dx bundle 内部先 build 再打包；--out-dir 把最终产物扁平化到 dist/，路径跨平台一致。
       # MACOSX_DEPLOYMENT_TARGET 仅对 macOS 生效：在 macOS 15 上构建却令产物可装到 macOS 13+。
+      # Linux：一次产出 AppImage + .deb。重复 --package-types 是 dx 接收多类型的唯一写法
+      # （逗号/空格分隔无效）。.deb 依赖系统 webkit，体积远小于自带 WebView 的 AppImage。
+      - name: Bundle (linux → appimage + deb)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: dx bundle --platform linux --release --package-types appimage --package-types deb --out-dir dist
+
+      # macOS / Windows：单一安装包类型（dmg / nsis），由 matrix.pkg 决定。
       - name: Bundle (${{ matrix.platform }} → ${{ matrix.pkg }})
+        if: matrix.platform != 'linux'
         shell: bash
         env:
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macos_target }}

@@ -17,4 +17,25 @@ title = "Easy Json View - JSON 格式化工具"
 [bundle]
 identifier = "com.swatchion.easy-json-view"
 publisher = "swatchion"
-icon = ["assets/icon.png"]
+# 多尺寸图标：dx 按像素尺寸装入 hicolor/<WxH>/apps/，原样复制不缩放，故须逐尺寸提供
+# （由 assets/icon.svg 经 magick 生成的 8-bit RGBA）。安装后应用菜单/Dock 据此显示图标。
+icon = [
+  "assets/icon-32.png",
+  "assets/icon-48.png",
+  "assets/icon-64.png",
+  "assets/icon-128.png",
+  "assets/icon-256.png",
+  "assets/icon-512.png",
+]
+short_description = "JSON 格式化/校验工具"
+# 须为合法 freedesktop 主分类（写入 .desktop 的 Categories=）；构建后核对生成的 .desktop。
+category = "Utility"
+
+# Debian (.deb) 专属设置（字段名/表路径据 dioxus-cli 0.7.9 config/bundle.rs::DebianSettings 核验）。
+# .deb 依赖系统 webkit 而非打包整套 WebView，故体积远小于 AppImage。
+[bundle.deb]
+# 运行时依赖：deb 安装时由 apt 解析。libwebkit2gtk-4.1-0 会传递拉取多数 GTK/soup 依赖；
+# libxdo3 对应 tao/global-hotkey 链接的 -lxdo（精确包名构建时以 ldd 核对，必要时增删）。
+depends = ["libwebkit2gtk-4.1-0", "libxdo3"]
+section = "utils"
+priority = "optional"

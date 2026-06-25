@@ -49,6 +49,9 @@ console_error_panic_hook = "0.1"
 dirs = "6"
 # 运行时无关的异步计时器：替代 gloo-timers，规避 tokio reactor 依赖
 futures-timer = "3"
+# 用系统默认浏览器打开外部 URL（About 弹窗的 GitHub 链接）。
+# 桌面 webview 内直接导航 <a href> 会替换掉应用页面，故须交给系统处理器（xdg-open/open/start）。
+open = "5"
 
 # ===== 文件对话框（rfd）按操作系统分叉 =====
 # Linux：xdg-portal 后端——无 GTK、运行时无关（pollster 驱动），避免与 tao/wry 的 GTK 主循环冲突。
@@ -81,6 +84,8 @@ opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"
+# 剥离符号表与调试信息，显著缩小 release 二进制（桌面打包体积）。
+strip = true
 
 [profile.wasm-dev]
 inherits = "dev"
@@ -91,7 +96,3 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
-
-[package.metadata.appimage]
-auto_link = true
-auto_link_exclude_list = ["libc.so.6", "libdl.so.2", "libpthread.so.0"]

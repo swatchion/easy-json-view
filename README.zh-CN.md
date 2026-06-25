@@ -135,12 +135,14 @@ cargo test test_json_formatting --no-default-features
 cargo bench --no-default-features
 ```
 
+## ⚠️ 已知限制（Linux）
+
+- **窗口控制按钮（Wayland）**：在 Wayland 会话下，窗口的最小化 / 最大化 / 关闭按钮遵循 GTK 默认（右侧），**不会**跟随 GNOME 全局「macOS 式左上角」布局——这是 tao 裸 GTK 窗口在 Wayland 下的已知限制。若希望按钮置于左侧（或跟随你的 GNOME 设置），可经 XWayland 启动：`GDK_BACKEND=x11 ./easy-json-view`（代价：高分屏下 XWayland 可能略糊）。
+
 ## 🗺️ 路线图 / Roadmap
 
-- 桌面打包为可安装产物（AppImage / `dx bundle`）——本次双目标改造未含，留后续
 - JSON 字符串转义 / 反转义
-- 多语言
-- 零闪烁的桌面启动主题（当前首帧可能极短浅色闪烁）
+- 彻底零闪烁的深色启动：浅色启动现已贴合（巨型未样式化图标闪烁已修复，首帧使用应用浅色底）；深色用户仍可能见到极短的浅色首帧——首帧底色为原生静态值，无法随主题切换
 
 ## 📄 许可证
 

@@ -346,6 +346,33 @@ impl HistoryService {
         Ok(())
     }
 
+    /// 就地更新某条记录的格式化结果（formatted_content），保留 id/名称/内容/时间戳/书签。
+    /// 用于「trim 去重」命中已存记录、但本次缩进选项变化致输出不同时刷新其美化结果——
+    /// 不新增、不置顶。纯逻辑收口在 `set_record_formatted`（便于单测、不触盘）。
+    pub async fn update_record_formatted(record_id: &str, formatted: String) -> Result<()> {
+        let mut records = Self::load_history().await?;
+
+        if set_record_formatted(&mut records, record_id, formatted) {
+            Storage::set(Self::STORAGE_KEY, &records)
+                .map_err(|e| anyhow::anyhow!("更新历史记录格式化结果失败: {:?}", e))?;
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("未找到指定的历史记录"))
+        }
+    }
+
+}
+
+/// 在记录列表中就地更新 id 匹配项的 `formatted_content`，返回是否命中。
+/// 纯函数（无 Storage / async）：仅动目标项的 formatted_content，其它字段与其它记录均不变——
+/// 与 `HistoryService::update_record_formatted` 的存储 IO 解耦，便于单测。
+pub fn set_record_formatted(records: &mut [HistoryRecord], record_id: &str, formatted: String) -> bool {
+    if let Some(record) = records.iter_mut().find(|r| r.id == record_id) {
+        record.formatted_content = formatted;
+        true
+    } else {
+        false
+    }
 }
 
 /// 配置服务
