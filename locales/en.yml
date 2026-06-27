@@ -180,4 +180,11 @@ about:
   light_title: Featherweight
   light_desc: Built in Rust for a tiny memory footprint and instant formatting.
   tech_stack: Proudly built with Rust + Dioxus
+  version: "Version %{v}"
   source: View source on GitHub
+
+# 启动门控失败页（样式表迟迟未生效时显示，文案不依赖 Tailwind 样式）。
+splash:
+  fail_title: Couldn't load styles
+  fail_msg: The interface stylesheet didn't load, so the app is held back to avoid showing a broken layout. Check your connection and retry.
+  retry: Retry

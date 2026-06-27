@@ -19,6 +19,22 @@ enum ViewMode {
     Tree,
 }
 
+/// 启动门控三态：界面仅在 Ready（实测 Tailwind 已生效）时显示；探测期间显示加载中；
+/// 探测窗口耗尽仍未生效则进入 Failed（显示「样式加载失败 · 重试」错误页，绝不揭示未样式化界面）。
+#[derive(Clone, Copy, PartialEq)]
+enum LoadPhase {
+    Loading,
+    Ready,
+    Failed,
+}
+
+/// CSS 就绪探针（单次 eval 内用 rAF 轮询，`.flex` 一生效即返回 "ready"，最多约 8s 后返回 "timeout"）。
+/// 建隐藏 `.flex` 探针读 computed display——无 CSS 时 div 默认 `block`，tailwind.css 生效后
+/// `.flex{display:flex}` 命中变 `flex`（与主题/调色板无关的二值，不用背景色避免深浅误判）。
+/// 把等待放进一次 eval，避免多次 Rust↔JS 往返各自的 poll_join 开销（实测每次往返约 1s），样式一生效即揭示。
+/// 固定字面量、无任何用户输入插值。
+const CSS_READY_JS: &str = "return await new Promise(res=>{const t0=performance.now();(function check(){const p=document.createElement('div');p.className='flex';p.style.cssText='position:absolute;visibility:hidden';document.body.appendChild(p);const d=getComputedStyle(p).display;p.remove();if(d==='flex')return res('ready');if(performance.now()-t0>8000)return res('timeout');requestAnimationFrame(check);})();});";
+
 /// 树形视图最大节点数：超过则禁用「树」切换，回退文本视图以防 DOM 过大卡顿。
 const TREE_NODE_CAP: usize = 3000;
 
@@ -32,7 +48,8 @@ const SAMPLE_JSON: &str = r#"{"name":"Easy Json View","version":"1.0.0","tags":[
 /// 当插值，keyframe 花括号会编译失败——故经 `dangerous_inner_html` 注入整段。
 /// 背景与 `bg-app`（浅 #e9edf3 / 深 #0a0e15，见 input.css）及 main.rs 窗口底色一致 → 揭示无色块跳变；
 /// 旋转环主色用品牌蓝 #3b78ff。不含文案（避免 i18n 在 config 异步加载前显示默认英文再跳变）。
-const SPLASH_CSS: &str = "@keyframes ejv-spin{to{transform:rotate(360deg)}}#ejv-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#e9edf3}html.dark #ejv-splash{background:#0a0e15}.ejv-ring{width:38px;height:38px;border-radius:50%;border:3px solid rgba(59,120,255,.25);border-top-color:#3b78ff;animation:ejv-spin .7s linear infinite}";
+// 失败态样式也内联于此（绝不能依赖 Tailwind——它正是没加载成功才显示此页）。
+const SPLASH_CSS: &str = "@keyframes ejv-spin{to{transform:rotate(360deg)}}#ejv-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#e9edf3}html.dark #ejv-splash{background:#0a0e15}.ejv-ring{width:38px;height:38px;border-radius:50%;border:3px solid rgba(59,120,255,.25);border-top-color:#3b78ff;animation:ejv-spin .7s linear infinite}.ejv-fail{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:340px;padding:24px;text-align:center;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}.ejv-fail-title{font-size:15px;font-weight:600;color:#0f172a}.ejv-fail-msg{font-size:13px;line-height:1.5;color:#64748b}.ejv-retry{margin-top:4px;padding:7px 18px;font-size:13px;font-weight:500;color:#fff;background:#3b78ff;border:none;border-radius:8px;cursor:pointer}.ejv-retry:hover{background:#1f53e0}html.dark .ejv-fail-title{color:#e5e7eb}html.dark .ejv-fail-msg{color:#94a3b8}";
 
 /// 将文本写入系统剪贴板（fire-and-forget，忽略返回的 Promise）。Web：浏览器 Clipboard API。
 #[cfg(target_arch = "wasm32")]
@@ -260,6 +277,9 @@ fn open_url(url: &str) {
 
 /// 项目源码仓库地址（About 弹窗「查看源码」链接）。
 const GITHUB_URL: &str = "https://github.com/swatchion/easy-json-view";
+
+/// 当前用户运行的 release 版本（编译期取自 Cargo.toml 的 version，bump 版本即自动同步）。
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// 支持的界面语言：(locale code, 该语言自称 autonym)。加语言 = 加一行 + 一个 locales/<code>.yml。
 /// 语言名用自称（English / 中文），按惯例不翻译——不入 YAML，故与「键集对称」检查无关。
@@ -511,8 +531,10 @@ pub fn App() -> Element {
     let mut input_right = use_signal(|| 0f64);
     // mousedown 时测得的主区左缘视口坐标（=侧栏右缘）；用于把输出下限钳到 SPLIT_MIN，避免输出被挤到 0
     let mut input_left = use_signal(|| 0f64);
-    // 启动加载屏门控：false 时显示不依赖 Tailwind 的 spinner 遮罩；CSS 实测生效或 2s 兜底后翻 true。
-    let mut is_ready = use_signal(|| false);
+    // 启动门控三态：Loading 显示 spinner 遮罩；探测确认 Tailwind 生效→Ready 揭示界面；
+    // 探测窗口耗尽仍未生效→Failed 显示错误页。绝不在样式生效前揭示界面（无提前兜底）。
+    // 「重试」走整页 reload（见错误页按钮）：失败的样式表 <link> 不会自动重取，只重跑探针无效。
+    let mut load_phase = use_signal(|| LoadPhase::Loading);
 
     // 语言切换的响应式保险：显式读取 language，使 App() 订阅该字段——切换器写入时触发整树重渲染。
     let _lang = ui_settings.read().language.clone();
@@ -532,33 +554,18 @@ pub fn App() -> Element {
         });
     });
 
-    // 启动加载屏的揭示逻辑（独立于上面的读盘 effect）：两个幂等 spawn。
+    // 启动门控的揭示逻辑（独立于上面的读盘 effect）：无响应式依赖，挂载后只跑一次（「重试」走整页 reload 重新挂载）。
     use_effect(move || {
-        // 检测：轮询一个隐藏探针 `.flex` 的 computed display——无 CSS 时 div 默认 `block`，
-        // tailwind.css 生效后 `.flex{display:flex}` 命中变 `flex` 即揭示。用二值 display
-        // （与主题/调色板无关），不用背景色（深浅不同会误判）。eval 的 await-返回值形式与
-        // 分栏拖动测量同款（已验证可用），不依赖未验证的 recv/send 流式 API。
-        // 安全：脚本为固定字面量、无任何用户输入插值，仅创建临时探针并读取 computed style
-        // （非 JS eval 任意输入；同 apply_theme/scroll_to_match 的 document::eval 用法）。
+        // 移除 index.html 泄漏的静态启动屏：dx 0.7 把应用「追加」进 #main 而非替换，故静态 #ejv-boot
+        // 会永久浮在最上层盖住应用。Dioxus 自身的 splash 自首帧起即接管覆盖，此处移除静态屏即无缝衔接。
+        // eval 构造即执行，无需 await。
+        let _ = document::eval("document.getElementById('ejv-boot')?.remove();");
+        // 检测：单次 eval 内用 rAF 轮询，`.flex` 一生效立刻 resolve('ready')，最多约 8s 后 'timeout'。
+        // eval 的 await-返回值形式与分栏拖动测量同款。安全：CSS_READY_JS 为固定字面量、无用户输入插值。
         spawn(async move {
-            for _ in 0..40 {
-                if *is_ready.read() { break; }
-                let res = document::eval(
-                    "const p=document.createElement('div');p.className='flex';p.style.position='absolute';p.style.visibility='hidden';document.body.appendChild(p);const d=getComputedStyle(p).display;p.remove();return d;"
-                ).await;
-                if let Ok(v) = res {
-                    if v.as_str() == Some("flex") {
-                        is_ready.set(true);
-                        break;
-                    }
-                }
-                sleep_ms(50).await;
-            }
-        });
-        // 兜底：无论检测成败，2s 后揭示，绝不困住用户。
-        spawn(async move {
-            sleep_ms(2000).await;
-            is_ready.set(true);
+            let ready = matches!(document::eval(CSS_READY_JS).await, Ok(v) if v.as_str() == Some("ready"));
+            // 'ready' → 揭示；'timeout' 或 eval 失败 → 错误页（绝不揭示未样式化界面）。
+            load_phase.set(if ready { LoadPhase::Ready } else { LoadPhase::Failed });
         });
     });
 
@@ -2431,6 +2438,11 @@ pub fn App() -> Element {
                                 class: "text-xs text-muted",
                                 {t!("about.tech_stack").to_string()}
                             }
+                            // 当前运行的 release 版本（取自 Cargo.toml 编译期常量 VERSION）。
+                            p {
+                                class: "text-xs font-medium text-ink mt-1",
+                                {t!("about.version", v = VERSION).to_string()}
+                            }
                             // GitHub 源码链接。用 button 而非 <a href>：桌面 webview 内导航 href 会替换掉
                             // 应用页面，故走 open_url（桌面交系统浏览器 / Web 新标签）。title 悬停显示真实地址。
                             button {
@@ -2445,15 +2457,33 @@ pub fn App() -> Element {
                 }
             }
 
-            // ===== 启动加载屏（FOUC 屏障）=====
-            // SPLASH_CSS 无条件渲染（保证 keyframes 始终在位）；遮罩仅在 is_ready=false 时挂载。
-            // 真实 UI 始终挂在其下并被样式化，故检测探针能看到 CSS 生效——【勿】改为 if is_ready {app} else {splash}
-            // 的二选一渲染（那会阻止真实 UI 渲染/样式化，检测永远看不到 CSS 生效而死锁）。
+            // ===== 启动门控遮罩（FOUC 屏障）=====
+            // SPLASH_CSS 无条件渲染（保证 keyframes/失败态样式始终在位、不依赖 Tailwind）；
+            // 遮罩在 Loading/Failed 时覆盖在真实 UI 之上，Ready 时撤除。
+            // 真实 UI（含 document::Stylesheet）始终挂在其下并被样式化，故探针能看到 CSS 生效——
+            // 【勿】改为 if ready {app} else {splash} 的二选一渲染（那会让样式表脱离 DOM、永不加载而死锁）。
             style { dangerous_inner_html: SPLASH_CSS }
-            if !*is_ready.read() {
-                div { id: "ejv-splash",
-                    div { class: "ejv-ring" }
-                }
+            match *load_phase.read() {
+                LoadPhase::Ready => rsx! {},
+                LoadPhase::Loading => rsx! {
+                    div { id: "ejv-splash",
+                        div { class: "ejv-ring" }
+                    }
+                },
+                LoadPhase::Failed => rsx! {
+                    div { id: "ejv-splash",
+                        div { class: "ejv-fail",
+                            div { class: "ejv-fail-title", {t!("splash.fail_title").to_string()} }
+                            div { class: "ejv-fail-msg", {t!("splash.fail_msg").to_string()} }
+                            button {
+                                // 整页 reload：失败的样式表 <link> 不会自动重取，须重新加载页面重新拉取 CSS。
+                                class: "ejv-retry",
+                                onclick: move |_| { let _ = document::eval("window.location.reload();"); },
+                                {t!("splash.retry").to_string()}
+                            }
+                        }
+                    }
+                },
             }
         }
     }

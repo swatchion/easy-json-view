@@ -26,20 +26,22 @@
         } catch (e) { /* 忽略 */ }
     </script>
     <!-- 启动加载屏（Web 专用，覆盖 wasm 引导前的空白期）：与 app.rs SPLASH_CSS 同款。
-         桌面 webview 不经此 <head>，靠 app.rs 的 Dioxus style{} 注入。 -->
+         用独立 id #ejv-boot（非 #ejv-splash）以区别于 Dioxus 自身的门控遮罩——Dioxus 挂载后由
+         app.rs 主动移除本静态屏，其自身 splash 接管覆盖。桌面 webview 不经此 <head>。 -->
     <style>
         @keyframes ejv-spin { to { transform: rotate(360deg); } }
-        #ejv-splash { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #e9edf3; }
-        html.dark #ejv-splash { background: #0a0e15; }
+        #ejv-boot { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #e9edf3; }
+        html.dark #ejv-boot { background: #0a0e15; }
         .ejv-ring { width: 38px; height: 38px; border-radius: 50%; border: 3px solid rgba(59,120,255,.25); border-top-color: #3b78ff; animation: ejv-spin .7s linear infinite; }
     </style>
 </head>
 <body>
     <!-- 挂载点。WASM 引导脚本与打包样式由 dx 在构建时注入；Tailwind CSS 经 app.rs 的
-         document::Stylesheet + asset! 引入。静态加载屏在 Dioxus 挂载时被替换为应用（含 Dioxus
-         自身的 #ejv-splash 遮罩），无缝接力，遮住样式生效前的未样式化空白。 -->
+         document::Stylesheet + asset! 引入。静态启动屏 #ejv-boot 覆盖 wasm 引导前的空白期；
+         dx 0.7 把应用追加进 #main（不替换），故由 app.rs 在挂载后移除它，交由 Dioxus 自身的
+         #ejv-splash 门控遮罩无缝接管，直到实测样式生效才揭示界面。 -->
     <div id="main">
-        <div id="ejv-splash"><div class="ejv-ring"></div></div>
+        <div id="ejv-boot"><div class="ejv-ring"></div></div>
     </div>
 </body>
 </html>
